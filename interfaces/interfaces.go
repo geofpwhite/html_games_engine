@@ -29,5 +29,4 @@ type Player struct {
 /*
 interface for each game type's json-sendable object to implement
 */
-type ClientState interface {
-}
+type ClientState interface{}

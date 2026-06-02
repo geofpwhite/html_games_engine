@@ -9,7 +9,7 @@
     let gamecode = window.location.href;
     gamecode = gamecode.substring(gamecode.indexOf("toe/") + 4);
     console.log(gamecode);
-    const socket = new WebSocket("ws://localhost:8080/tictactoe/ws/" + gamecode);
+    const socket = new WebSocket("wss://geof.geofpwhite.us/tictactoe/ws/" + gamecode);
     
     function move(x,y) {
       str = ""+x+""+y+""

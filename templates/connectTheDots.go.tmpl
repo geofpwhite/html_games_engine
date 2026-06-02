@@ -137,7 +137,7 @@
     gamecode = gamecode.substring(gamecode.indexOf("ts/") + 3);
     console.log(gamecode);
     const socket = new WebSocket(
-      "ws://localhost:8080/connect-the-dots/ws/" + gamecode
+      "wss://geof.geofpwhite.us/connect-the-dots/ws/" + gamecode
     );
 
     socket.onmessage = (event) => {

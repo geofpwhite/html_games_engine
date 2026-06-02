@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"net/http"
 
-	accounts "github.com/geofpwhite/html_games_engine/accountDB"
 	connectthedots "github.com/geofpwhite/html_games_engine/connectTheDots"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	tictactoe "github.com/geofpwhite/html_games_engine/ticTacToe"
@@ -12,7 +11,6 @@ import (
 	connect4 "github.com/geofpwhite/html_games_engine/connect4"
 	hangman "github.com/geofpwhite/html_games_engine/hangman"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
@@ -22,22 +20,27 @@ func mod(a, b int) int {
 
 // nastiest part of the system.
 func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn) {
-
-	var upgrader = websocket.Upgrader{
+	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	r := gin.Default()
-	gin.SetMode(gin.ReleaseMode)
-	r.SetFuncMap(template.FuncMap{"mod": mod})
-
-	r.LoadHTMLGlob("templates/*")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home_page.go.tmpl", gin.H{})
+	r := http.NewServeMux()
+	funcMap := template.FuncMap{
+		"mod": mod,
+	}
+	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_page.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
-	r.GET("/about", func(c *gin.Context) {
-		// c.HTML(http.StatusOK, "about.go.tmpl", gin.H{})
-		c.Redirect(http.StatusMovedPermanently, "https://github.com/geofpwhite/html_games_engine")
+	r.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_page.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+	r.HandleFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://github.com/geofpwhite/html_games_engine", http.StatusMovedPermanently)
 	})
 
 	hangman.HangmanRoutes(r, &upgrader, games, playerHashes, inputChannel)
@@ -45,7 +48,5 @@ func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game,
 	connectthedots.ConnectTheDotsRoutes(r, &upgrader, games, playerHashes, inputChannel)
 	tictactoe.TicTacToeRoutes(r, &upgrader, games, playerHashes, inputChannel)
 	accounts.AccountRoutes(r, accounts.NewAccountsGamesHandler())
-
-	r.Run("0.0.0.0:8080")
-
+	r.ServeHTTP()
 }

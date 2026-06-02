@@ -12,11 +12,13 @@ import (
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
-const HOST_WINS = 1
-const HOST_LOSES = 2
+const (
+	HOST_WINS  = 1
+	HOST_LOSES = 2
+)
 
 type hangmanClientState struct {
 	Players        []string  `json:"players"`
@@ -56,7 +58,7 @@ type hangman struct {
 	mut                 *sync.RWMutex
 	chatLogs            []chatLog
 	consecutiveTimeouts int
-	randomlyChosen      bool //boolean for methods to check if they need to act differently because the backend randomly chose a word
+	randomlyChosen      bool // boolean for methods to check if they need to act differently because the backend randomly chose a word
 	gameID              string
 }
 
@@ -112,6 +114,7 @@ func (gState *hangman) runTicker(timeoutChannel chan<- string, inputChannel <-ch
 		}
 	}
 }
+
 func (gState *hangman) newPlayer(p interfaces.Player) {
 	gState.mut.Lock()
 	defer gState.mut.Unlock()
@@ -288,6 +291,7 @@ func (gState *hangman) chat(message string, playerIndex int) {
 			Sender:  gState.players[playerIndex].Username,
 		})
 }
+
 func (gState *hangman) JSON() interfaces.ClientState {
 	gState.mut.RLock()
 	defer gState.mut.RUnlock()

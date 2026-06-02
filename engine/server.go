@@ -2,6 +2,7 @@ package engine
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
 	connectthedots "github.com/geofpwhite/html_games_engine/connectTheDots"
@@ -18,7 +19,6 @@ func mod(a, b int) int {
 	return a % b
 }
 
-// nastiest part of the system.
 func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -29,24 +29,19 @@ func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game,
 		"mod": mod,
 	}
 	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("GET /", func(w http.ResponseWriter, req *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_page.go.tmpl", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-	r.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if err := tmpl.ExecuteTemplate(w, "home_page.go.tmpl", nil); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
-	r.HandleFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://github.com/geofpwhite/html_games_engine", http.StatusMovedPermanently)
+	r.HandleFunc("GET /about", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "https://github.com/geofpwhite/html_games_engine", http.StatusMovedPermanently)
 	})
 
-	hangman.HangmanRoutes(r, &upgrader, games, playerHashes, inputChannel)
-	connect4.Connect4Routes(r, &upgrader, games, playerHashes, inputChannel)
-	connectthedots.ConnectTheDotsRoutes(r, &upgrader, games, playerHashes, inputChannel)
-	tictactoe.TicTacToeRoutes(r, &upgrader, games, playerHashes, inputChannel)
-	accounts.AccountRoutes(r, accounts.NewAccountsGamesHandler())
-	r.ServeHTTP()
+	hangman.HangmanRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
+	connect4.Connect4Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
+	connectthedots.ConnectTheDotsRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
+	tictactoe.TicTacToeRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
+
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

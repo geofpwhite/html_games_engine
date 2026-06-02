@@ -1,49 +1,52 @@
 package tictactoe
 
 import (
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-func TicTacToeRoutes(r *gin.Engine, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.GET("/tictactoe", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home_screen_tictactoe.go.tmpl", gin.H{})
-	})
-	r.GET("/tictactoe/:gameID", func(c *gin.Context) {
-		gameID, b := c.Params.Get("gameID")
-		if !b {
-			return
+func TicTacToeRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
+	r.HandleFunc("GET /tictactoe", func(w http.ResponseWriter, req *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_screen_tictactoe.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		c.HTML(http.StatusOK, "tictactoe.go.tmpl", gin.H{"Rows": (games[gameID]).(*ticTacToe).field})
 	})
-	r.GET("/tictactoe/ws/:gameID", func(c *gin.Context) {
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		gameID, b := c.Params.Get("gameID")
-		if err != nil || !b {
-			return
-		}
-		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, "", playerHashes, gameID)
-	})
-	r.GET("/tictactoe/reconnect/:playerHash/:gameID", func(c *gin.Context) {
-
-	})
-	r.GET("/tictactoe/new_game", func(c *gin.Context) {
+	r.HandleFunc("GET /tictactoe/new_game", func(w http.ResponseWriter, req *http.Request) {
 		gState, hash := NewGameTicTacToe()
 		var game interfaces.Game = gState
 		games[hash] = game
-		c.JSON(200, struct {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(struct {
 			GameID string `json:"gameID"`
 			Team   int    `json:"team"`
 		}{GameID: hash, Team: 1})
 	})
-
+	r.HandleFunc("GET /tictactoe/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		conn, err := upgrader.Upgrade(w, req, nil)
+		if err != nil || gameID == "" {
+			return
+		}
+		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, "", playerHashes, gameID)
+	})
+	r.HandleFunc("GET /tictactoe/reconnect/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {})
+	r.HandleFunc("GET /tictactoe/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		if gameID == "" {
+			return
+		}
+		if err := tmpl.ExecuteTemplate(w, "tictactoe.go.tmpl", map[string]any{"Rows": (games[gameID]).(*ticTacToe).field}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 }
 
 func handleWebSocketTicTacToe(conn *websocket.Conn,

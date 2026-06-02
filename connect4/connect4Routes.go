@@ -3,6 +3,7 @@ package connect4
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"slices"
 	"strconv"
@@ -12,26 +13,35 @@ import (
 
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-func Connect4Routes(r *gin.Engine, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.GET("/connect4/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home_screen_connect4.go.tmpl", gin.H{})
+func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
+	r.HandleFunc("GET /connect4/", func(w http.ResponseWriter, req *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_screen_connect4.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
-	r.GET("/connect4/ws/:gameID", func(c *gin.Context) {
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		gameID, b := c.Params.Get("gameID")
-		if err != nil || !b {
-			panic("/hangman/ws/:gameID gave an error")
+
+	r.HandleFunc("GET /connect4/new_game", func(w http.ResponseWriter, req *http.Request) {
+		c4, hash := newGameConnect4()
+		var g interfaces.Game = c4
+		games[hash] = g
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(hash)
+	})
+
+	r.HandleFunc("GET /connect4/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		conn, err := upgrader.Upgrade(w, req, nil)
+		if err != nil || gameID == "" {
+			panic("/connect4/ws/:gameID gave an error")
 		}
 		gameObj := games[gameID]
 		game := gameObj.(*connect4)
 		playerHash := IDGenerator.GenerateID(10)
 		playerHashes[playerHash] = conn
 		if game.playersConnected >= 2 {
-			//don't let them join
 			return
 		} else if game.playersConnected == 1 {
 			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 1})
@@ -40,16 +50,11 @@ func Connect4Routes(r *gin.Engine, upgrader *websocket.Upgrader, games map[strin
 			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 0})
 			game.playersConnected++
 		}
-		if !b {
-			return
-		}
 		defer func() {
 			conn.Close()
-			//handle game exit
 		}()
 
 		for {
-
 			x, msg, err := conn.ReadMessage()
 			if err != nil {
 				return
@@ -57,11 +62,9 @@ func Connect4Routes(r *gin.Engine, upgrader *websocket.Upgrader, games map[strin
 			if x == websocket.TextMessage {
 				switch string(msg) {
 				case "r":
-					// rotate(game)
 					c4i := connect4RotateInput{gameID: gameID, playerIndex: -1}
 					inputChannel <- &c4i
 				default:
-					// insert(game, team, column)
 					msgStrings := strings.Split(string(msg), ",")
 					team, _ := strconv.Atoi(msgStrings[0])
 					column, _ := strconv.Atoi(msgStrings[1])
@@ -73,21 +76,15 @@ func Connect4Routes(r *gin.Engine, upgrader *websocket.Upgrader, games map[strin
 				json.Unmarshal(msg, &obj)
 			}
 		}
+	})
 
-	})
-	r.GET("/connect4/new_game", func(c *gin.Context) {
-		c4, hash := newGameConnect4()
-		var g interfaces.Game = c4
-		games[hash] = g
-		c.JSON(200, hash)
-	})
-	r.GET("/connect4/:gameID", func(c *gin.Context) {
-		gameID, b := c.Params.Get("gameID")
+	r.HandleFunc("GET /connect4/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
 		colors := map[string]string{
 			"1": "blue",
 			"2": "red",
 		}
-		if !b {
+		if gameID == "" {
 			return
 		}
 		game := (games[gameID]).(*connect4)
@@ -103,10 +100,11 @@ func Connect4Routes(r *gin.Engine, upgrader *websocket.Upgrader, games map[strin
 			}
 		}
 		slices.Reverse(rows)
-		c.HTML(http.StatusOK, "connect4.go.tmpl", gin.H{
+		if err := tmpl.ExecuteTemplate(w, "connect4.go.tmpl", map[string]any{
 			"Rows":   rows,
 			"Colors": colors,
-		})
-
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 }

@@ -1,6 +1,8 @@
 package connectthedots
 
 import (
+	"encoding/json"
+	"html/template"
 	"net/http"
 	"slices"
 	"strconv"
@@ -9,52 +11,47 @@ import (
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-func ConnectTheDotsRoutes(r *gin.Engine, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.GET("/connect-the-dots", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home_screen_connectTheDots.go.tmpl", gin.H{})
-	})
-	r.GET("/connect-the-dots/:gameID", func(c *gin.Context) {
-		gameID, b := c.Params.Get("gameID")
-		if !b {
-			panic("no game hash")
+func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
+	r.HandleFunc("GET /connect-the-dots", func(w http.ResponseWriter, req *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_screen_connectTheDots.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		str := "auto"
-		for i := 0; i < 14; i++ {
-			str += " auto"
-		}
-		c.HTML(http.StatusOK, "connectTheDots.go.tmpl", gin.H{"Rows": (games[gameID]).(*connectTheDots).field, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{}})
-	})
-	r.GET("/connect-the-dots-test", func(c *gin.Context) {
-		str := "auto"
-		for i := 0; i < 14; i++ {
-			str += " auto"
-		}
-		c.HTML(http.StatusOK, "connectTheDots.go.tmpl", gin.H{"Rows": [15][15]int{}, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{}})
 	})
 
-	r.GET("/connect-the-dots/new_game", func(c *gin.Context) {
+	r.HandleFunc("GET /connect-the-dots-test", func(w http.ResponseWriter, req *http.Request) {
+		str := "auto"
+		for i := 0; i < 14; i++ {
+			str += " auto"
+		}
+		if err := tmpl.ExecuteTemplate(w, "connectTheDots.go.tmpl", map[string]any{"Rows": [15][15]int{}, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	r.HandleFunc("GET /connect-the-dots/new_game", func(w http.ResponseWriter, req *http.Request) {
 		c4, hash := NewGameConnectTheDots(8)
 		var g interfaces.Game = c4
 		games[hash] = g
-		c.JSON(200, hash)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(hash)
 	})
-	r.GET("/connect-the-dots/reconnect/:gameID/:playerHash", func(c *gin.Context) {})
-	r.GET("/connect-the-dots/ws/:gameID", func(c *gin.Context) {
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		gameID, b := c.Params.Get("gameID")
-		if err != nil || !b {
-			panic("/hangman/ws/:gameID gave an error")
+
+	r.HandleFunc("GET /connect-the-dots/reconnect/{gameID}/{playerHash}", func(w http.ResponseWriter, req *http.Request) {})
+
+	r.HandleFunc("GET /connect-the-dots/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		conn, err := upgrader.Upgrade(w, req, nil)
+		if err != nil || gameID == "" {
+			panic("/connect-the-dots/ws/:gameID gave an error")
 		}
 		gameObj := games[gameID]
 		game := gameObj.(*connectTheDots)
 		playerHash := IDGenerator.GenerateID(10)
 		playerHashes[playerHash] = conn
 		if game.playersConnected >= 2 {
-			//don't let them join
 			return
 		} else if game.playersConnected == 1 {
 			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 1})
@@ -63,15 +60,25 @@ func ConnectTheDotsRoutes(r *gin.Engine, upgrader *websocket.Upgrader, games map
 			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 0})
 			game.playersConnected++
 		}
-		if !b {
-			return
-		}
 		defer func() {
 			conn.Close()
-			//handle game exit
 		}()
 
 		HandleWebSocketConnectTheDots(conn, inputChannel, gameObj.(*connectTheDots), false, playerHash, playerHashes, gameID)
+	})
+
+	r.HandleFunc("GET /connect-the-dots/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		if gameID == "" {
+			panic("no game hash")
+		}
+		str := "auto"
+		for i := 0; i < 14; i++ {
+			str += " auto"
+		}
+		if err := tmpl.ExecuteTemplate(w, "connectTheDots.go.tmpl", map[string]any{"Rows": (games[gameID]).(*connectTheDots).field, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 }
 

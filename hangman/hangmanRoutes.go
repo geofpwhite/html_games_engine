@@ -2,6 +2,7 @@ package hangman
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"reflect"
 	"slices"
@@ -10,69 +11,31 @@ import (
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-func HangmanRoutes(r *gin.Engine, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.Static("/hangman_game/", "./build_hangman/")
-	r.GET("/hangman/ws/:gameID", func(c *gin.Context) {
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		gameID, b := c.Params.Get("gameID")
-		if err != nil || !b {
-			panic("/hangman/ws/:gameID gave an error")
-		}
-		fmt.Println(games[gameID])
-		fmt.Println(gameID)
-		handleWebSocketHangman(conn, inputChannel, games[gameID], false, "", playerHashes)
-	})
+func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
+	r.Handle("GET /hangman_game/", http.StripPrefix("/hangman_game/", http.FileServer(http.Dir("./build_hangman/"))))
 
-	r.GET("/hangman/new_game", func(c *gin.Context) {
+	r.HandleFunc("GET /hangman/new_game", func(w http.ResponseWriter, req *http.Request) {
 		gState := newGameHangman()
 		var game interfaces.Game = gState
 		games[gState.gameID] = game
-		// newTickerInputChannel := make(chan (inputInfo))
-		// tickerInputChannels[gState.gameID] = newTickerInputChannel
-		// go (*gState).runTicker(tickerTimeoutChannel, newTickerInputChannel, closeGameChannel)
-		c.JSON(200, struct {
-			GameID string `json:"gameID"`
-		}{GameID: gState.gameID})
-	})
-	r.GET("/hangman/get_games", func(c *gin.Context) {
-		c.String(http.StatusOK, "0")
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"gameID":%q}`, gState.gameID)
 	})
 
-	r.GET("/hangman/reconnect/:playerHash/:gameID", func(c *gin.Context) {
-
-		playerHash, b := c.Params.Get("playerHash")
-		if !b {
-			return
-		}
-		gameID, b := c.Params.Get("gameID")
-		if !b {
-			return
-		}
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			fmt.Println(err)
-			conn.Close()
-			return
-		}
-
-		if games[gameID] != nil {
-			handleWebSocketHangman(conn, inputChannel, games[gameID], true, playerHash, playerHashes)
-		} else {
-			conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"})
-		}
+	r.HandleFunc("GET /hangman/get_games", func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprint(w, "0")
 	})
 
-	r.GET("/hangman/valid/:playerHash", func(c *gin.Context) {
-		hash, b := c.Params.Get("playerHash")
-		if !b {
+	r.HandleFunc("GET /hangman/valid/{playerHash}", func(w http.ResponseWriter, req *http.Request) {
+		hash := req.PathValue("playerHash")
+		if hash == "" {
 			return
 		}
 		if playerHashes[hash] == nil {
-			c.String(http.StatusOK, "-1")
+			fmt.Fprint(w, "-1")
 		} else {
 			var gameID string
 			for i, g := range games {
@@ -84,14 +47,14 @@ func HangmanRoutes(r *gin.Engine, upgrader *websocket.Upgrader, games map[string
 					}
 				}
 			}
-			c.String(http.StatusOK, gameID)
+			fmt.Fprint(w, gameID)
 		}
 	})
 
-	r.GET("hangman/exit_game/:playerHash/:gameID", func(c *gin.Context) {
-		defer c.String(http.StatusOK, "ok")
-		playerHash, _ := c.Params.Get("playerHash")
-		gameID, _ := c.Params.Get("gameID")
+	r.HandleFunc("GET /hangman/exit_game/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		defer fmt.Fprint(w, "ok")
+		playerHash := req.PathValue("playerHash")
+		gameID := req.PathValue("gameID")
 		_player := playerHashes[playerHash]
 		if _player == nil || games[gameID] == nil {
 			return
@@ -101,7 +64,39 @@ func HangmanRoutes(r *gin.Engine, upgrader *websocket.Upgrader, games map[string
 		delete(playerHashes, playerHash)
 		inputChannel <- &exitGameInput{gameID, playerIndex}
 	})
+
+	r.HandleFunc("GET /hangman/reconnect/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		playerHash := req.PathValue("playerHash")
+		gameID := req.PathValue("gameID")
+		if playerHash == "" || gameID == "" {
+			return
+		}
+		conn, err := upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		if games[gameID] != nil {
+			handleWebSocketHangman(conn, inputChannel, games[gameID], true, playerHash, playerHashes)
+		} else {
+			conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"})
+			conn.Close()
+		}
+	})
+
+	r.HandleFunc("GET /hangman/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		conn, err := upgrader.Upgrade(w, req, nil)
+		if err != nil || gameID == "" {
+			panic("/hangman/ws/:gameID gave an error")
+		}
+		fmt.Println(games[gameID])
+		fmt.Println(gameID)
+		handleWebSocketHangman(conn, inputChannel, games[gameID], false, "", playerHashes)
+	})
 }
+
 func handleWebSocketHangman(
 	conn *websocket.Conn,
 	inputChannel chan interfaces.Input,
@@ -157,7 +152,6 @@ func handleWebSocketHangman(
 			})
 
 		}
-		// gState.connections = append(gState.connections, conn)
 		defer conn.Close()
 		usernames := []string{}
 		for _, p := range gState.players {

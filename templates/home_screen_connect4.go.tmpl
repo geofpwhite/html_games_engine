@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connect 4 </title>
   <script type="text/javascript" >
-  const url = "https://geof.geofpwhite.us/"
+  const url = "https://geof.geofpwhite.us"
   
   async function newgame(){
-    let x = await fetch(url+"games/connect4/new_game")
+    let x = await fetch(url+"/games/connect4/new_game")
     let code = await x.text()
     console.log(code)
     code = code.substring(1,7)

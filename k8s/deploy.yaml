@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: games-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: games-engine
+  template:
+    metadata:
+      labels:
+        app: games-engine
+    spec:
+      containers:
+        - name: games-engine
+          image: ghcr.io/geofpwhite/html_games_engine:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              hostPort: 8080

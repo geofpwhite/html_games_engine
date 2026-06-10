@@ -17,7 +17,7 @@ import (
 )
 
 func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.HandleFunc("GET /connect4/", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /connect4", func(w http.ResponseWriter, req *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_connect4.go.tmpl", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

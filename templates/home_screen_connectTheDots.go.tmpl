@@ -12,7 +12,7 @@
     let x = await fetch(url+"/connect-the-dots/new_game")
     let code = await x.text()
     code = code.substring(1,7)
-    window.location.href = url+ "/connect-the-dots/" + code
+    window.location.href = url+ "/games/connect-the-dots/" + code
 
   }
   </script>

@@ -37,6 +37,5 @@ jobs:
           username: geof
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/games-engine
             docker compose pull
             docker compose up -d

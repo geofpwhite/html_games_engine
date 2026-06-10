@@ -9,7 +9,7 @@
   const url = "https://geof.geofpwhite.us"
   
   async function newgame(){
-    let x = await fetch(url+"/tictactoe/new_game")
+    let x = await fetch(url+"/games/tictactoe/new_game")
     let code = await x.json()
     console.log(code)
 

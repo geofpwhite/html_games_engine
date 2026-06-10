@@ -9,7 +9,7 @@
   const url = "https://geof.geofpwhite.us"
   
   async function newgame(){
-    let x = await fetch(url+"/connect-the-dots/new_game")
+    let x = await fetch(url+"/games/connect-the-dots/new_game")
     let code = await x.text()
     code = code.substring(1,7)
     window.location.href = url+ "/games/connect-the-dots/" + code

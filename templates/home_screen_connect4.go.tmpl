@@ -9,7 +9,7 @@
   const url = "https://geof.geofpwhite.us/"
   
   async function newgame(){
-    let x = await fetch(url+"/connect4/new_game")
+    let x = await fetch(url+"games/connect4/new_game")
     let code = await x.text()
     console.log(code)
     code = code.substring(1,7)

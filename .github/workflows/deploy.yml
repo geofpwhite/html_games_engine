@@ -34,7 +34,7 @@ jobs:
       - uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DROPLET_IP }}
-          username: root
+          username: geof
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             kubectl apply -f /opt/games-engine/k8s/deploy.yaml

@@ -37,6 +37,6 @@ jobs:
           username: geof
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            kubectl apply -f /opt/games-engine/k8s/deploy.yaml
-            kubectl rollout restart deployment/games-engine
-            kubectl rollout status deployment/games-engine --timeout=120s
+            cd /opt/games-engine
+            docker compose pull
+            docker compose up -d

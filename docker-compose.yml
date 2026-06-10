@@ -1,0 +1,6 @@
+services:
+  games-engine:
+    image: ghcr.io/geofpwhite/html_games_engine:latest
+    restart: always
+    ports:
+      - "8080:8080"

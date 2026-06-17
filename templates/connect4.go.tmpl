@@ -9,7 +9,7 @@
     let gamecode = window.location.href;
     gamecode = gamecode.substring(gamecode.indexOf("4/") + 2);
     console.log(gamecode);
-    const socket = new WebSocket("wss://geof.geofpwhite.us/connect4/ws/" + gamecode);
+    const socket = new WebSocket("wss://geof.geofpwhite.us/games/connect4/ws/" + gamecode);
     function insert(team, column) {
       socket.send(team + "," + column);
     }

@@ -19,7 +19,13 @@ func WhiteboardRoutes(
 	upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game,
 	playerHashes map[string]*websocket.Conn,
-	inputChannel chan interfaces.Input) {
+	inputChannel chan interfaces.Input,
+) {
+	r.HandleFunc("GET /whiteboard", func(w http.ResponseWriter, req *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_screen_whiteboard.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 
 	r.HandleFunc("GET /whiteboard/new_game", func(w http.ResponseWriter, req *http.Request) {
 		wb, hash := NewWhiteboard(800, 600)

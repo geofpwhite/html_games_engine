@@ -11,6 +11,7 @@ import (
 
 	connect4 "github.com/geofpwhite/html_games_engine/connect4"
 	hangman "github.com/geofpwhite/html_games_engine/hangman"
+	whiteboard "github.com/geofpwhite/html_games_engine/whiteboard"
 
 	"github.com/gorilla/websocket"
 )
@@ -42,6 +43,7 @@ func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game,
 	connect4.Connect4Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
 	connectthedots.ConnectTheDotsRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
 	tictactoe.TicTacToeRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
+	whiteboard.WhiteboardRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

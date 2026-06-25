@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-{{$s := .GridTemplate}}
+{{ $s := .GridTemplate }}
 <html>
 
-<head>
+	<head>
   <style>
     .ver-0 {
       position: relative;
@@ -160,24 +160,26 @@
       }
     };
   </script>
-</head>
+	</head>
 
-<body>
-{{template "navbar"}}
-  <div class="grid-container" id="grid">
-    {{$grid := .Rows}} 
-    {{range $i,$row:= $grid}} 
-    {{range $j,$num:= $row}} 
-    {{if eq $num 3}}
-    <div class="point"></div>
-    {{else if and (eq (mod $i 2 ) 1) (eq (mod $j 2) 1) }}
-    <div class="cell-{{$num}}"></div>
-    {{else if and (eq (mod $i 2 ) 0) (eq (mod $j 2) 1) }}
-    <div class="hor-{{$num}}" onclick="addEdge({{$i}},{{$j}})"></div>
-    {{else if and (eq (mod $i 2 ) 1) (eq (mod $j 2) 0) }}
-    <div class="ver-{{$num}}" onclick="addEdge({{$i}},{{$j}})"></div>
-    {{end}} {{end}}{{end}}
-  </div>
-</body>
+	<body>
+		{{ template "navbar" }}
+		<div class="grid-container" id="grid">
+			{{ $grid := .Rows }} 
+			{{ range $i, $row := $grid }} 
+				{{ range $j, $num := $row }} 
+					{{ if eq $num 3 }}
+						<div class="point"></div>
+					{{ else if and (eq (mod $i 2) 1) (eq (mod $j 2) 1) }}
+						<div class="cell-{{ $num }}"></div>
+					{{ else if and (eq (mod $i 2) 0) (eq (mod $j 2) 1) }}
+						<div class="hor-{{ $num }}" onclick="addEdge({{ $i }},{{ $j }})"></div>
+					{{ else if and (eq (mod $i 2) 1) (eq (mod $j 2) 0) }}
+						<div class="ver-{{ $num }}" onclick="addEdge({{ $i }},{{ $j }})"></div>
+					{{ end }} 
+				{{ end }}
+			{{ end }}
+		</div>
+	</body>
 
 </html>

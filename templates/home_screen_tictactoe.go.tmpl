@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connect 4 </title>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Connect 4 </title>
   <script type="text/javascript" >
   const url = "https://geof.geofpwhite.us"
   
@@ -16,6 +16,11 @@
     window.location.href = url+ "/games/tictactoe/" + code.gameID
 
   }
+
+  function joingame(){
+    const id = document.getElementById("gameID").value.trim()
+    if (id) window.location.href = url + "/games/tictactoe/" + id
+  }
   </script>
 
   <style>
@@ -26,15 +31,28 @@
       text-align: center;
       line-height: 50px;
     }
+  #gameID {
+      border-radius: 25px;
+      padding: 0 12px;
+      border: 1px solid #ccc;
+      height: 50px;
+      font-size: 14px;
+      outline: none;
+    }
   </style>
-</head>
+	</head>
 
-<body>
+	<body>
 
-<button class="button" onclick="newgame()">
-New Game
-</button>
+		<button class="button" onclick="newgame()">
+			New Game
+		</button>
+		<br><br>
+		<input type="text" id="gameID" placeholder="Game ID">
+		<button class="button" onclick="joingame()">
+			Join Game
+		</button>
 
-</body>
+	</body>
 
 </html>

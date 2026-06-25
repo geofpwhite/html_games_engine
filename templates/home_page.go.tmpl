@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connect 4 </title>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Connect 4 </title>
   <script type="text/javascript" >
   
   </script>
@@ -22,17 +22,18 @@
 
       }
   </style>
-</head>
+	</head>
 
-<body>
-{{template "navbar" .}}
-<div style="position:absolute;right:50%;top:20%;">
-<h2> Pick a Game </h2>
-<a href="https://geofpwhite.github.io/hangman"><button class="button" type="button" id="hangman">hangman</button></a>
-<a href="/games/connect4"><button class="button" type="button" id="connect4" >connect 4</button></a>
-<a href="/games/connect-the-dots"><button class="button" type="button" id="connectTheDots" >connect the dots</button></a>
-<a href="/games/tictactoe"><button class="button" type="button" id="tictactoe" >tictactoe</button></a>
-</div>
-</body>
+	<body>
+		{{ template "navbar" . }}
+		<div style="position:absolute;right:50%;top:20%;">
+			<h2> Pick a Game </h2>
+			<a href="https://geofpwhite.github.io/hangman"><button class="button" type="button" id="hangman">hangman</button></a>
+			<a href="/games/connect4"><button class="button" type="button" id="connect4" >connect 4</button></a>
+			<a href="/games/connect-the-dots"><button class="button" type="button" id="connectTheDots" >connect the dots</button></a>
+			<a href="/games/tictactoe"><button class="button" type="button" id="tictactoe" >tictactoe</button></a>
+			<a href="/games/whiteboard"><button class="button" type="button" id="whiteboard" >whiteboard</button></a>
+		</div>
+	</body>
 
 </html>

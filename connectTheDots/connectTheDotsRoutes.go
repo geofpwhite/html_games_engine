@@ -70,7 +70,7 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 	r.HandleFunc("GET /connect-the-dots/{gameID}", func(w http.ResponseWriter, req *http.Request) {
 		gameID := req.PathValue("gameID")
 		if gameID == "" {
-			panic("no game hash")
+			http.Error(w, "no game matches that ID", http.StatusNotFound)
 		}
 		str := "auto"
 		for i := 0; i < 14; i++ {
@@ -87,7 +87,8 @@ func HandleWebSocketConnectTheDots(conn *websocket.Conn,
 	game *connectTheDots,
 	reconnect bool,
 	hash string,
-	playerHashes map[string]*websocket.Conn, gameID string) {
+	playerHashes map[string]*websocket.Conn, gameID string,
+) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {

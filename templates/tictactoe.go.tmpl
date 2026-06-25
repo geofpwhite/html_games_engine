@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Connect 4 Grid</title>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Connect 4 Grid</title>
   <script type="text/javascript">
     let gamecode = window.location.href;
     gamecode = gamecode.substring(gamecode.indexOf("toe/") + 4);
@@ -96,33 +96,33 @@
       color: #fff;
     }
   </style>
-</head>
+	</head>
 
 
 
-<body>
-  {{template "navbar" .}}
-  <div style="margin-left:50%;">
-    <div id="mydiv">
-      <div id="mydivheader">Click here to move</div>
-      <div style="
-          font-weight: bold;
-          text-align: right;
-          position: absolute;
-          bottom: 50px;
-          right: 50px;
-        ">
-        <div id="grid" class="grid">
-          {{ range $i,$row := .Rows }}
-          {{ range $j,$col := $row }}
-          <div id="{{$i}}-{{$j}}" class="cell-0" onclick="move({{$i}},{{$j}})"></div>
-          {{ end }}
-          {{ end }}
-        </div>
-      </div>
-    </div>
-  </div>
-</body>
+	<body>
+		{{ template "navbar" . }}
+		<div style="margin-left:50%;">
+			<div id="mydiv">
+				<div id="mydivheader">Click here to move</div>
+				<div style="
+					font-weight: bold;
+					text-align: right;
+					position: absolute;
+					bottom: 50px;
+					right: 50px;
+					">
+					<div id="grid" class="grid">
+						{{ range $i, $row := .Rows }}
+							{{ range $j, $col := $row }}
+								<div id="{{ $i }}-{{ $j }}" class="cell-0" onclick="move({{ $i }},{{ $j }})"></div>
+							{{ end }}
+						{{ end }}
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
 
 </html>
 <script type="text/javascript">

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Whiteboard</title>
+  <script type="text/javascript" >
+  const url = "https://geof.geofpwhite.us"
+
+  async function newgame(){
+    let x = await fetch(url+"/games/whiteboard/new_game")
+    let code = await x.text()
+    code = code.substring(1,7)
+    window.location.href = url+ "/games/whiteboard/" + code
+
+  }
+
+  function joingame(){
+    const id = document.getElementById("gameID").value.trim()
+    if (id) window.location.href = url + "/games/whiteboard/" + id
+  }
+  </script>
+
+  <style>
+  .button {
+      background-color: white;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      text-align: center;
+      line-height: 50px;
+    }
+  #gameID {
+      border-radius: 25px;
+      padding: 0 12px;
+      border: 1px solid #ccc;
+      height: 50px;
+      font-size: 14px;
+      outline: none;
+    }
+  </style>
+	</head>
+
+	<body>
+
+		<button class="button" onclick="newgame()">
+			New Game
+		</button>
+		<br><br>
+		<input type="text" id="gameID" placeholder="Game ID">
+		<button class="button" onclick="joingame()">
+			Join Game
+		</button>
+
+	</body>
+
+</html>

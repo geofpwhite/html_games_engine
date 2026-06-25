@@ -1,28 +1,28 @@
 
 <!DOCTYPE html>
 <html>
-<head>
-	<title>{{.Title}}</title>
-</head>
-<body>
-{{template "navbar"}}
-	<form id="register-form">
-        <ul>
-            <li>
-                <label for="Username"><b>Username</b></label>
-                <input type="text" placeholder="Enter Username" name="Username" id="username"  required>
-            </li>
+	<head>
+		<title>{{ .Title }}</title>
+	</head>
+	<body>
+		{{ template "navbar" }}
+		<form id="register-form">
+			<ul>
+				<li>
+					<label for="Username"><b>Username</b></label>
+					<input type="text" placeholder="Enter Username" name="Username" id="username"  required>
+				</li>
 
-            <li>
-                <label for="Password"><b>Password</b></label>
-                <input type="password" placeholder="Enter Password" name="Password" id="password" required>
-            </li>
-            <li>
-                <button type="submit" >Login</button>
-            </li>
-        </ul>
-	</form>
-</body>
+				<li>
+					<label for="Password"><b>Password</b></label>
+					<input type="password" placeholder="Enter Password" name="Password" id="password" required>
+				</li>
+				<li>
+					<button type="submit" >Login</button>
+				</li>
+			</ul>
+		</form>
+	</body>
 
 <script type="text/javascript">
 document.getElementById('register-form').addEventListener('submit', function(event) {

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whiteboard</title>
+  <style>
+    body {
+      margin: 0;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 20px;
+      background: #16213e;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #toolbar label {
+      color: #eee;
+      font-family: sans-serif;
+      font-size: 14px;
+    }
+
+    #whiteboard {
+      cursor: crosshair;
+      border: 2px solid #0f3460;
+      background: white;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  {{ template "navbar" . }}
+
+  <div id="toolbar">
+    <label>Color: <input type="color" id="colorPicker" value="#000000"></label>
+    <label>Brush: <input type="range" id="brushSize" min="1" max="20" value="3"></label>
+  </div>
+
+  <canvas id="whiteboard" width="800" height="600"></canvas>
+
+  <script>
+    const gamecode = window.location.href.split("ard/")[1];
+    const socket = new WebSocket("wss://geof.geofpwhite.us/games/whiteboard/ws/" + gamecode);
+
+    const canvas = document.getElementById("whiteboard");
+    const ctx = canvas.getContext("2d");
+    let isDrawing = false;
+
+    socket.onmessage = (event) => {
+      const obj = JSON.parse(event.data);
+      if (!obj.Png) return;
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0);
+      img.src = "data:image/png;base64," + obj.Png;
+    };
+
+    function sendDraw(x, y) {
+      const color = document.getElementById("colorPicker").value.slice(1);
+      const size = parseInt(document.getElementById("brushSize").value);
+      for (let dx = -size; dx <= size; dx++) {
+        for (let dy = -size; dy <= size; dy++) {
+          if (dx * dx + dy * dy <= size * size) {
+            const px = x + dx;
+            const py = y + dy;
+            if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+              socket.send("d:" + px + "-" + py + "-" + color);
+            }
+          }
+        }
+      }
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: Math.floor(e.clientX - rect.left),
+        y: Math.floor(e.clientY - rect.top)
+      };
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      isDrawing = true;
+      const pos = getPos(e);
+      sendDraw(pos.x, pos.y);
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (!isDrawing) return;
+      const pos = getPos(e);
+      sendDraw(pos.x, pos.y);
+    });
+
+    canvas.addEventListener("mouseup", () => isDrawing = false);
+    canvas.addEventListener("mouseleave", () => isDrawing = false);
+  </script>
+</body>
+
+</html>

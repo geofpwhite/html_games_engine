@@ -1,8 +1,6 @@
 package tictactoe
 
 import (
-	"sync"
-
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 )
@@ -10,7 +8,6 @@ import (
 const X, O = 1, 2
 
 type ticTacToe struct {
-	mut         *sync.RWMutex
 	field       [3][3]int
 	turn        int
 	players     [2]*interfaces.Player
@@ -28,7 +25,6 @@ func NewGameTicTacToe() (*ticTacToe, string) {
 	gState := &ticTacToe{
 		field:  [3][3]int{},
 		turn:   1,
-		mut:    &sync.RWMutex{},
 		scores: [2]int{},
 	}
 	return gState, IDGenerator.GenerateID(6)
@@ -41,8 +37,6 @@ func (gState *ticTacToe) reset() {
 }
 
 func (gState *ticTacToe) move(x, y, team int) {
-	gState.mut.Lock()
-	defer gState.mut.Unlock()
 	if gState.turn != team || gState.field[x][y] != 0 {
 		return
 	}
@@ -107,8 +101,6 @@ func (gState *ticTacToe) Players() []*interfaces.Player {
 }
 
 func (gState *ticTacToe) newPlayer(p interfaces.Player) int {
-	gState.mut.Lock()
-	defer gState.mut.Unlock()
 	if gState.playersSize < 2 {
 		gState.players[gState.playersSize] = &p
 		gState.playersSize++

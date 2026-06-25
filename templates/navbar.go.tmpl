@@ -1,35 +1,35 @@
-{{define "navbar"}}
-    <nav>
-        <ul style="display:flex;gap:30px;">
-            <li><a href="/">Home</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/register">Register</a></li>
-            <li><a href="/user-stats">User Stats</a></li>
-        </ul>
-    </nav>
-{{end}}
+{{ define "navbar" }}
+<nav>
+	<ul style="display:flex;gap:30px;">
+		<li><a href="/">Home</a></li>
+		<li><a href="/about">About</a></li>
+		<li><a href="/login">Login</a></li>
+		<li><a href="/register">Register</a></li>
+		<li><a href="/user-stats">User Stats</a></li>
+	</ul>
+</nav>
+{{ end }}
 
-{{define "navbar-logged-in"}}
-    <nav>
-        <ul style="display:flex;gap:30px;">
-            <li><a href="/">Home</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/user-stats">User Stats</a></li>
-            <li><a href="/logout">Logout</a></li>
+{{ define "navbar-logged-in" }}
+<nav>
+	<ul style="display:flex;gap:30px;">
+		<li><a href="/">Home</a></li>
+		<li><a href="/about">About</a></li>
+		<li><a href="/user-stats">User Stats</a></li>
+		<li><a href="/logout">Logout</a></li>
 
-        </ul>
-    </nav>
-{{end}}
+	</ul>
+</nav>
+{{ end }}
 
-{{define "navbar-not-logged-in"}}
-    <nav>
-        <ul style="display:flex;gap:30px;">
-            <li><a href="/">Home</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/register">Register</a></li>
+{{ define "navbar-not-logged-in" }}
+<nav>
+	<ul style="display:flex;gap:30px;">
+		<li><a href="/">Home</a></li>
+		<li><a href="/about">About</a></li>
+		<li><a href="/login">Login</a></li>
+		<li><a href="/register">Register</a></li>
 
-        </ul>
-    </nav>
-{{end}}
+	</ul>
+</nav>
+{{ end }}

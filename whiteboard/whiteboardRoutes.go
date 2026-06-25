@@ -31,9 +31,7 @@ func WhiteboardRoutes(
 		wb, hash := NewWhiteboard(800, 600)
 		games[hash] = wb
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(struct {
-			GameID string `json:"gameID"`
-		}{GameID: hash})
+		json.NewEncoder(w).Encode(hash)
 	})
 
 	r.HandleFunc("GET /whiteboard/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {

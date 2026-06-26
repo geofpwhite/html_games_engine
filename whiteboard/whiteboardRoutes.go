@@ -102,22 +102,21 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			pString := string(p)
 			switch pString[:2] {
 			case "d:":
-				coords := [2]int{}
-				numStrings := strings.Split(pString[2:], "-")
-				numString1, numString2 := numStrings[0], numStrings[1]
-				num, _ := strconv.Atoi(numString1)
-				coords[0] = num
-				num, _ = strconv.Atoi(numString2)
-				coords[1] = num
-				s := numStrings[2]
-
-				clr := imgDecode(s)
+				parts := strings.Split(pString[2:], "-")
+				if len(parts) < 4 {
+					continue
+				}
+				x, _ := strconv.Atoi(parts[0])
+				y, _ := strconv.Atoi(parts[1])
+				clr := imgDecode(parts[2])
+				radius, _ := strconv.Atoi(parts[3])
 
 				inputChannel <- &drawInput{
-					x:      coords[0],
-					y:      coords[1],
+					x:      x,
+					y:      y,
 					gameID: gameID,
 					color:  clr,
+					radius: radius,
 				}
 
 			default:

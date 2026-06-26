@@ -65,24 +65,16 @@
         img.src = "data:image/png;base64," + obj.png;
       } else if (obj.type === "delta") {
         ctx.fillStyle = "rgba(" + obj.r + "," + obj.g + "," + obj.b + "," + (obj.a / 255) + ")";
-        ctx.fillRect(obj.x, obj.y, 1, 1);
+        ctx.beginPath();
+        ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+        ctx.fill();
       }
     };
 
     function sendDraw(x, y) {
       const color = document.getElementById("colorPicker").value.slice(1);
-      const size = parseInt(document.getElementById("brushSize").value);
-      for (let dx = -size; dx <= size; dx++) {
-        for (let dy = -size; dy <= size; dy++) {
-          if (dx * dx + dy * dy <= size * size) {
-            const px = x + dx;
-            const py = y + dy;
-            if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
-              socket.send("d:" + px + "-" + py + "-" + color);
-            }
-          }
-        }
-      }
+      const radius = parseInt(document.getElementById("brushSize").value);
+      socket.send("d:" + x + "-" + y + "-" + color + "-" + radius);
     }
 
     function getPos(e) {

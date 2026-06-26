@@ -5,18 +5,20 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
 
 	"github.com/geofpwhite/html_games_engine/IDGenerator"
 	"github.com/geofpwhite/html_games_engine/interfaces"
 )
 
 type whiteboard struct {
-	img     image.RGBA
-	buf     bytes.Buffer
-	bytes   []byte
-	len     int32
-	players []*interfaces.Player
+	img        image.RGBA
+	lastChange pixelChange
+	players    []*interfaces.Player
+}
+
+type pixelChange struct {
+	x, y  int
+	color color.RGBA
 }
 
 type drawInput struct {
@@ -35,12 +37,8 @@ func (di *drawInput) PlayerIndex() int {
 
 func (di *drawInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
-		gState.draw(di.x, di.y, di.color)
-		if err := png.Encode(&gState.buf, &gState.img); err != nil {
-			log.Fatalf("failed to encode image: %v", err)
-		}
-		gState.bytes = gState.buf.Bytes()
-		gState.len = int32(len(gState.bytes))
+		gState.img.Set(di.x, di.y, di.color)
+		gState.lastChange = pixelChange{x: di.x, y: di.y, color: di.color}
 	}
 }
 
@@ -55,15 +53,38 @@ func (wb *whiteboard) Players() []*interfaces.Player {
 	return wb.players
 }
 
-type whiteboardObj struct {
-	Length int32  `json:"Length"`
-	Png    []byte `json:"Png"`
+type whiteboardDelta struct {
+	Type string `json:"type"`
+	X    int    `json:"x"`
+	Y    int    `json:"y"`
+	R    uint8  `json:"r"`
+	G    uint8  `json:"g"`
+	B    uint8  `json:"b"`
+	A    uint8  `json:"a"`
+}
+
+type whiteboardFull struct {
+	Type string `json:"type"`
+	Png  []byte `json:"png"`
 }
 
 func (wb *whiteboard) JSON() interfaces.ClientState {
-	return whiteboardObj{Length: wb.len, Png: wb.bytes}
+	c := wb.lastChange
+	return whiteboardDelta{
+		Type: "delta",
+		X:    c.x,
+		Y:    c.y,
+		R:    c.color.R,
+		G:    c.color.G,
+		B:    c.color.B,
+		A:    c.color.A,
+	}
 }
 
-func (wb *whiteboard) draw(x, y int, color color.RGBA) {
-	wb.img.Set(x, y, color)
+func (wb *whiteboard) encodedPNG() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, &wb.img); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

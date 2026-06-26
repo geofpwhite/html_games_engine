@@ -53,6 +53,17 @@ func WhiteboardRoutes(
 
 		playerHash := IDGenerator.GenerateID(10)
 		playerHashes[playerHash] = conn
+
+		// Send the full current image before registering the player so the
+		// output loop doesn't race with this initial write.
+		if pngBytes, err := wb.encodedPNG(); err == nil {
+			err2 := conn.WriteJSON(whiteboardFull{Type: "full", Png: pngBytes})
+			if err2 != nil {
+				conn.Close()
+				return
+			}
+		}
+
 		wb.players = append(wb.players, &interfaces.Player{
 			PlayerID:    playerHash,
 			GameID:      gameID,
@@ -119,7 +130,7 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 func imgDecode(s string) color.RGBA {
 	clr := color.RGBA{0, 0, 0, 255}
 	for i := 0; i < 6; i += 2 {
-		n, err := strconv.ParseInt(s[i:i+2], 16, 8)
+		n, err := strconv.ParseUint(s[i:i+2], 16, 8)
 		if err != nil {
 			continue
 		}

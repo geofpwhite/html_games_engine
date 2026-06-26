@@ -59,10 +59,14 @@
 
     socket.onmessage = (event) => {
       const obj = JSON.parse(event.data);
-      if (!obj.Png) return;
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0);
-      img.src = "data:image/png;base64," + obj.Png;
+      if (obj.type === "full") {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = "data:image/png;base64," + obj.png;
+      } else if (obj.type === "delta") {
+        ctx.fillStyle = "rgba(" + obj.r + "," + obj.g + "," + obj.b + "," + (obj.a / 255) + ")";
+        ctx.fillRect(obj.x, obj.y, 1, 1);
+      }
     };
 
     function sendDraw(x, y) {

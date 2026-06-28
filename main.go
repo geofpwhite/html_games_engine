@@ -8,9 +8,8 @@ import (
 )
 
 func main() {
-
-	var games map[string]interfaces.Game = make(map[string]interfaces.Game)
-	var playerHashes map[string]*websocket.Conn = make(map[string]*websocket.Conn)
+	games := make(map[string]interfaces.Game)
+	playerHashes := make(map[string]*websocket.Conn)
 	inputChannel := make(chan interfaces.Input)
 	outputChannel := make(chan string)
 	go engine.Serve(inputChannel, games, playerHashes)

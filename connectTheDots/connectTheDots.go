@@ -12,8 +12,7 @@ type connectTheDots struct {
 	field               [][]int //
 	turn                int
 	players             []*interfaces.Player
-	playersConnected    int
-	redScore, blueScore int
+	playersConnected int
 }
 
 type connectTheDotsClientState struct {

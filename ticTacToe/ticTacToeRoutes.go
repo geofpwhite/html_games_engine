@@ -24,10 +24,12 @@ func TicTacToeRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websoc
 		var game interfaces.Game = gState
 		games[hash] = game
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(struct {
+		if err := json.NewEncoder(w).Encode(struct {
 			GameID string `json:"gameID"`
 			Team   int    `json:"team"`
-		}{GameID: hash, Team: 1})
+		}{GameID: hash, Team: 1}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 	r.HandleFunc("GET /tictactoe/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
 		gameID := req.PathValue("gameID")
@@ -35,7 +37,7 @@ func TicTacToeRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websoc
 		if err != nil || gameID == "" {
 			return
 		}
-		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, "", playerHashes, gameID)
+		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, playerHashes, gameID)
 	})
 	r.HandleFunc("GET /tictactoe/reconnect/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {})
 	r.HandleFunc("GET /tictactoe/{gameID}", func(w http.ResponseWriter, req *http.Request) {
@@ -53,15 +55,14 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 	inputChannel chan<- interfaces.Input,
 	gameObj interfaces.Game,
 	reconnect bool,
-	hash string,
 	playerHashes map[string]*websocket.Conn,
 	gameID string,
 ) {
+	var hash string
 	if gState, ok := gameObj.(*ticTacToe); ok {
 		var playerIndex int
 
 		if reconnect {
-
 		} else {
 			if gState.playersSize > 1 {
 				return
@@ -73,7 +74,8 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 			playerHashes[hash] = conn
 
 		}
-		defer conn.Close()
+		defer conn.Close() //nolint:errcheck //not our concern if the connection closing causes some error
+
 		ui := &moveInput{gameID: gameID, playerIndex: playerIndex, team: playerIndex + 1}
 		for {
 			err := conn.ReadJSON(ui)

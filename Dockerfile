@@ -1,27 +1,26 @@
-# Start from the latest golang base image
-FROM golang:latest
+# Build stage
+FROM golang:latest AS builder
 
-# Add Maintainer Info
 LABEL maintainer="Geoffrey White <geoffpiercewhite@gmail.com>"
 
-# Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy go mod and sum files
 COPY go.mod go.sum ./
+RUN go mod download
 
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
-RUN go mod tidy
-
-
-# Copy the source from the current directory to the Working Directory inside the container
 COPY . .
 
-# Build the Go app
-RUN go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main .
 
-# Expose port 8080 to the outside world
+# Final stage
+FROM scratch
+
+WORKDIR /app
+
+COPY --from=builder /app/main .
+COPY --from=builder /app/words.db .
+COPY --from=builder /app/templates ./templates
+
 EXPOSE 8080
 
-# Command to run the executable
-CMD ["./main"]
+CMD ["/app/main"]

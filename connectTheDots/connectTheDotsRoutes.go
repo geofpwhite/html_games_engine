@@ -36,7 +36,9 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 		var g interfaces.Game = c4
 		games[hash] = g
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(hash)
+		if err := json.NewEncoder(w).Encode(hash); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 
 	r.HandleFunc("GET /connect-the-dots/reconnect/{gameID}/{playerHash}", func(w http.ResponseWriter, req *http.Request) {})
@@ -60,9 +62,7 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 0})
 			game.playersConnected++
 		}
-		defer func() {
-			conn.Close()
-		}()
+		defer conn.Close() //nolint:errcheck
 
 		HandleWebSocketConnectTheDots(conn, inputChannel, gameObj.(*connectTheDots), false, playerHash, playerHashes, gameID)
 	})

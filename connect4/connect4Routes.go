@@ -28,7 +28,10 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 		var g interfaces.Game = c4
 		games[hash] = g
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(hash)
+		err := json.NewEncoder(w).Encode(hash)
+		if err != nil {
+			http.Error(w, "can't send hash", http.StatusExpectationFailed)
+		}
 	})
 
 	r.HandleFunc("GET /connect4/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
@@ -51,7 +54,7 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 			game.playersConnected++
 		}
 		defer func() {
-			conn.Close()
+			conn.Close() //nolint:errcheck //we don't care at the end of the function if the connection errors when closing
 		}()
 
 		for {
@@ -73,7 +76,10 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 				}
 			} else {
 				obj := make(map[string]any)
-				json.Unmarshal(msg, &obj)
+				err := json.Unmarshal(msg, &obj)
+				if err != nil {
+					http.Error(w, "can't unmarshall json", http.StatusInternalServerError)
+				}
 			}
 		}
 	})

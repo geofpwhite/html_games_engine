@@ -22,11 +22,11 @@ func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocke
 		var game interfaces.Game = gState
 		games[gState.gameID] = game
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"gameID":%q}`, gState.gameID)
+		fmt.Fprintf(w, `{"gameID":%q}`, gState.gameID) //nolint:errcheck
 	})
 
 	r.HandleFunc("GET /hangman/get_games", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprint(w, "0")
+		fmt.Fprint(w, "0") //nolint:errcheck
 	})
 
 	r.HandleFunc("GET /hangman/valid/{playerHash}", func(w http.ResponseWriter, req *http.Request) {
@@ -35,7 +35,7 @@ func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocke
 			return
 		}
 		if playerHashes[hash] == nil {
-			fmt.Fprint(w, "-1")
+			fmt.Fprint(w, "-1") //nolint:errcheck
 		} else {
 			var gameID string
 			for i, g := range games {
@@ -47,12 +47,11 @@ func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocke
 					}
 				}
 			}
-			fmt.Fprint(w, gameID)
+			fmt.Fprint(w, gameID) //nolint:errcheck
 		}
 	})
 
 	r.HandleFunc("GET /hangman/exit_game/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {
-		defer fmt.Fprint(w, "ok")
 		playerHash := req.PathValue("playerHash")
 		gameID := req.PathValue("gameID")
 		_player := playerHashes[playerHash]
@@ -80,8 +79,10 @@ func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocke
 		if games[gameID] != nil {
 			handleWebSocketHangman(conn, inputChannel, games[gameID], true, playerHash, playerHashes)
 		} else {
-			conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"})
-			conn.Close()
+			if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"}); err != nil {
+				fmt.Println(err)
+			}
+			conn.Close() //nolint:errcheck
 		}
 	})
 
@@ -116,8 +117,10 @@ func handleWebSocketHangman(
 				}
 				playerIndex = slices.IndexFunc(gState.players, func(p *interfaces.Player) bool { return p.PlayerID == hash })
 				if playerIndex == -1 {
-					conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "2"})
-					conn.Close()
+					if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "2"}); err != nil {
+						fmt.Println(err)
+					}
+					conn.Close() //nolint:errcheck
 					return
 				}
 				playerHashes[hash] = conn
@@ -135,7 +138,7 @@ func handleWebSocketHangman(
 			for _, p := range gState.players {
 				usernames = append(usernames, p.Username)
 			}
-			conn.WriteJSON(hangmanClientState{
+			if err := conn.WriteJSON(hangmanClientState{
 				Players:        usernames,
 				Turn:           gState.turn,
 				Host:           gState.curHostIndex,
@@ -149,10 +152,12 @@ func handleWebSocketHangman(
 				GameID:         gState.gameID,
 				ChatLogs:       gState.chatLogs,
 				Hash:           playerHash,
-			})
+			}); err != nil {
+				fmt.Println(err)
+			}
 
 		}
-		defer conn.Close()
+		defer conn.Close() //nolint:errcheck //not our concern if the connection closing causes some error
 		usernames := []string{}
 		for _, p := range gState.players {
 			usernames = append(usernames, p.Username)
@@ -175,7 +180,9 @@ func handleWebSocketHangman(
 
 		for i, player := range gState.players {
 			currentState.PlayerIndex = i
-			playerHashes[player.PlayerID].WriteJSON(currentState)
+			if err := playerHashes[player.PlayerID].WriteJSON(currentState); err != nil {
+				fmt.Println(err)
+			}
 		}
 
 		for {

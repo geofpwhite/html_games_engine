@@ -28,7 +28,9 @@ func WhiteboardRoutes(
 	})
 
 	r.HandleFunc("GET /whiteboard/new_game", func(w http.ResponseWriter, req *http.Request) {
-		wb, hash := NewWhiteboard(800, 600)
+		width := queryInt(req, "w", 1000, 100, 4000)
+		height := queryInt(req, "h", 500, 100, 4000)
+		wb, hash := NewWhiteboard(width, height)
 		games[hash] = wb
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(hash)
@@ -85,6 +87,14 @@ func WhiteboardRoutes(
 	})
 }
 
+func queryInt(req *http.Request, key string, def, min, max int) int {
+	v, err := strconv.Atoi(req.URL.Query().Get(key))
+	if err != nil || v < min || v > max {
+		return def
+	}
+	return v
+}
+
 func HandleWebSocketWhiteboard(conn *websocket.Conn,
 	inputChannel chan interfaces.Input,
 	game *whiteboard,
@@ -97,31 +107,85 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 		if err != nil {
 			return
 		}
-		switch messageType {
-		case websocket.TextMessage:
-			pString := string(p)
-			switch pString[:2] {
-			case "d:":
-				parts := strings.Split(pString[2:], "-")
-				if len(parts) < 4 {
-					continue
-				}
-				x, _ := strconv.Atoi(parts[0])
-				y, _ := strconv.Atoi(parts[1])
-				clr := imgDecode(parts[2])
-				radius, _ := strconv.Atoi(parts[3])
+		if messageType != websocket.TextMessage {
+			continue
+		}
+		pString := string(p)
+		colonIdx := strings.Index(pString, ":")
+		if colonIdx == -1 {
+			continue
+		}
+		msgType := pString[:colonIdx]
+		msgData := pString[colonIdx+1:]
 
-				inputChannel <- &drawInput{
-					x:      x,
-					y:      y,
-					gameID: gameID,
-					color:  clr,
-					radius: radius,
-				}
-
-			default:
+		switch msgType {
+		case "d":
+			parts := strings.Split(msgData, "-")
+			if len(parts) < 4 {
 				continue
 			}
+			x, errX := strconv.Atoi(parts[0])
+			y, errY := strconv.Atoi(parts[1])
+			clr := imgDecode(parts[2])
+			radius, errR := strconv.Atoi(parts[3])
+			if errX != nil || errY != nil || errR != nil {
+				continue
+			}
+			inputChannel <- &drawInput{x: x, y: y, gameID: gameID, color: clr, radius: radius}
+
+		case "c":
+			inputChannel <- &clearInput{gameID: gameID}
+
+		case "l":
+			// l:x1-y1-x2-y2-color-thickness
+			parts := strings.Split(msgData, "-")
+			if len(parts) < 6 {
+				continue
+			}
+			x1, e1 := strconv.Atoi(parts[0])
+			y1, e2 := strconv.Atoi(parts[1])
+			x2, e3 := strconv.Atoi(parts[2])
+			y2, e4 := strconv.Atoi(parts[3])
+			clr := imgDecode(parts[4])
+			thickness, e5 := strconv.Atoi(parts[5])
+			if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil {
+				continue
+			}
+			inputChannel <- &lineInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness}
+
+		case "r":
+			// r:x1-y1-x2-y2-color-thickness-theta
+			parts := strings.Split(msgData, "-")
+			if len(parts) < 7 {
+				continue
+			}
+			x1, e1 := strconv.Atoi(parts[0])
+			y1, e2 := strconv.Atoi(parts[1])
+			x2, e3 := strconv.Atoi(parts[2])
+			y2, e4 := strconv.Atoi(parts[3])
+			clr := imgDecode(parts[4])
+			thickness, e5 := strconv.Atoi(parts[5])
+			theta, e6 := strconv.ParseFloat(parts[6], 64)
+			if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil || e6 != nil {
+				continue
+			}
+			inputChannel <- &rectInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness, thetaDeg: theta}
+
+		case "ci":
+			// ci:x-y-radius-color-filled
+			parts := strings.Split(msgData, "-")
+			if len(parts) < 5 {
+				continue
+			}
+			x, e1 := strconv.Atoi(parts[0])
+			y, e2 := strconv.Atoi(parts[1])
+			radius, e3 := strconv.Atoi(parts[2])
+			clr := imgDecode(parts[3])
+			filled := parts[4] == "1"
+			if e1 != nil || e2 != nil || e3 != nil {
+				continue
+			}
+			inputChannel <- &circleInput{gameID: gameID, x: x, y: y, radius: radius, clr: clr, filled: filled}
 		}
 	}
 }

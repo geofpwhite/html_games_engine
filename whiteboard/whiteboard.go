@@ -5,15 +5,18 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 
 	"github.com/geofpwhite/html_games_engine/IDGenerator"
 	"github.com/geofpwhite/html_games_engine/interfaces"
+	"github.com/geofpwhite/paint"
 )
 
 type whiteboard struct {
 	img        image.RGBA
 	lastChange drawChange
 	players    []*interfaces.Player
+	needsFull  bool
 }
 
 type drawChange struct {
@@ -29,14 +32,8 @@ type drawInput struct {
 	radius int
 }
 
-func (di *drawInput) GameID() string {
-	return di.gameID
-}
-
-func (di *drawInput) PlayerIndex() int {
-	return -1
-}
-
+func (di *drawInput) GameID() string { return di.gameID }
+func (di *drawInput) PlayerIndex() int { return -1 }
 func (di *drawInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		bounds := gState.img.Bounds()
@@ -55,10 +52,93 @@ func (di *drawInput) ChangeState(gameObj interfaces.Game) {
 	}
 }
 
-func NewWhiteboard(w, h int) (*whiteboard, string) {
-	wb := whiteboard{
-		img: *image.NewRGBA(image.Rect(0, 0, w, h)),
+type clearInput struct {
+	gameID string
+}
+
+func (ci *clearInput) GameID() string    { return ci.gameID }
+func (ci *clearInput) PlayerIndex() int  { return -1 }
+func (ci *clearInput) ChangeState(gameObj interfaces.Game) {
+	if gState, ok := gameObj.(*whiteboard); ok {
+		fillWhite(&gState.img)
+		gState.needsFull = true
 	}
+}
+
+type lineInput struct {
+	gameID          string
+	x1, y1, x2, y2 int
+	clr             color.RGBA
+	thickness       int
+}
+
+func (li *lineInput) GameID() string   { return li.gameID }
+func (li *lineInput) PlayerIndex() int { return -1 }
+func (li *lineInput) ChangeState(gameObj interfaces.Game) {
+	if gState, ok := gameObj.(*whiteboard); ok {
+		paint.DrawLine(&gState.img, li.x1, li.y1, li.x2, li.y2, li.clr, li.thickness, false)
+		gState.needsFull = true
+	}
+}
+
+type rectInput struct {
+	gameID          string
+	x1, y1, x2, y2 int
+	clr             color.RGBA
+	thickness       int
+	thetaDeg        float64
+}
+
+func (ri *rectInput) GameID() string   { return ri.gameID }
+func (ri *rectInput) PlayerIndex() int { return -1 }
+func (ri *rectInput) ChangeState(gameObj interfaces.Game) {
+	if gState, ok := gameObj.(*whiteboard); ok {
+		if ri.thetaDeg != 0 {
+			theta := ri.thetaDeg * math.Pi / 180
+			paint.DrawRotatedRectangle(&gState.img, ri.x1, ri.y1, ri.x2, ri.y2, theta, ri.clr, ri.thickness, false)
+		} else {
+			paint.DrawRectangle(&gState.img, ri.x1, ri.y1, ri.x2, ri.y2, ri.clr, ri.thickness, false)
+		}
+		gState.needsFull = true
+	}
+}
+
+type circleInput struct {
+	gameID string
+	x, y   int
+	radius int
+	clr    color.RGBA
+	filled bool
+}
+
+func (ci *circleInput) GameID() string   { return ci.gameID }
+func (ci *circleInput) PlayerIndex() int { return -1 }
+func (ci *circleInput) ChangeState(gameObj interfaces.Game) {
+	if gState, ok := gameObj.(*whiteboard); ok {
+		center := paint.Coords{X: ci.x, Y: ci.y}
+		if ci.filled {
+			paint.DrawFilledCircle(&gState.img, ci.clr, ci.radius, center)
+		} else {
+			paint.DrawCircle(&gState.img, ci.clr, ci.radius, center)
+		}
+		gState.needsFull = true
+	}
+}
+
+func fillWhite(img *image.RGBA) {
+	b := img.Bounds()
+	white := color.RGBA{R: 255, G: 255, B: 255, A: 255}
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			img.SetRGBA(x, y, white)
+		}
+	}
+}
+
+func NewWhiteboard(w, h int) (*whiteboard, string) {
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	fillWhite(img)
+	wb := whiteboard{img: *img}
 	return &wb, IDGenerator.GenerateID(6)
 }
 
@@ -83,6 +163,12 @@ type whiteboardFull struct {
 }
 
 func (wb *whiteboard) JSON() interfaces.ClientState {
+	if wb.needsFull {
+		wb.needsFull = false
+		if pngBytes, err := wb.encodedPNG(); err == nil {
+			return whiteboardFull{Type: "full", Png: pngBytes}
+		}
+	}
 	c := wb.lastChange
 	return whiteboardDelta{
 		Type:   "delta",

@@ -9,7 +9,9 @@
   const url = "https://geof.geofpwhite.us"
 
   async function newgame(){
-    let x = await fetch(url+"/games/whiteboard/new_game")
+    const w = document.getElementById("imgWidth").value || 1000
+    const h = document.getElementById("imgHeight").value || 500
+    let x = await fetch(url+"/games/whiteboard/new_game?w="+w+"&h="+h)
     let code = await x.text()
     code = code.substring(1,7)
     window.location.href = url+ "/games/whiteboard/" + code
@@ -23,34 +25,63 @@
   </script>
 
   <style>
+  body {
+    font-family: sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+    gap: 16px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
   .button {
       background-color: white;
+      color: #1a1a2e;
       border-radius: 25px;
       border: 1px solid #ccc;
       text-align: center;
       line-height: 50px;
+      padding: 0 20px;
+      cursor: pointer;
+      font-size: 14px;
     }
-  #gameID {
+  .button:hover {
+    background-color: #ddd;
+  }
+  input[type="number"], input[type="text"] {
       border-radius: 25px;
       padding: 0 12px;
       border: 1px solid #ccc;
       height: 50px;
       font-size: 14px;
       outline: none;
+      background: #16213e;
+      color: #eee;
     }
+  label {
+    font-size: 14px;
+  }
   </style>
 	</head>
 
 	<body>
 
-		<button class="button" onclick="newgame()">
-			New Game
-		</button>
-		<br><br>
-		<input type="text" id="gameID" placeholder="Game ID">
-		<button class="button" onclick="joingame()">
-			Join Game
-		</button>
+    <div class="row">
+      <label>Width: <input type="number" id="imgWidth" value="1000" min="100" max="4000" style="width:80px"></label>
+      <label>Height: <input type="number" id="imgHeight" value="500" min="100" max="4000" style="width:80px"></label>
+      <button class="button" onclick="newgame()">New Game</button>
+    </div>
+
+    <div class="row">
+      <input type="text" id="gameID" placeholder="Game ID">
+      <button class="button" onclick="joingame()">Join Game</button>
+    </div>
 
 	</body>
 

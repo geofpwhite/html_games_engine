@@ -17,11 +17,12 @@
     #toolbar {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       padding: 10px 20px;
       background: #16213e;
       width: 100%;
       box-sizing: border-box;
+      flex-wrap: wrap;
     }
 
     #toolbar label {
@@ -30,11 +31,58 @@
       font-size: 14px;
     }
 
+    #toolbar select {
+      background: #0f3460;
+      color: #eee;
+      border: 1px solid #4a6fa5;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+    }
+
+    #toolbar button {
+      background: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #toolbar button:hover {
+      background: #e74c3c;
+    }
+
+    #rotation-group {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #filled-group {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #canvas-wrap {
+      position: relative;
+      margin-top: 10px;
+    }
+
     #whiteboard {
       cursor: crosshair;
       border: 2px solid #0f3460;
       background: white;
-      margin-top: 10px;
+      display: block;
+    }
+
+    #preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -44,10 +92,33 @@
 
   <div id="toolbar">
     <label>Color: <input type="color" id="colorPicker" value="#000000"></label>
-    <label>Brush: <input type="range" id="brushSize" min="1" max="20" value="3"></label>
+    <label>Size: <input type="range" id="brushSize" min="1" max="40" value="3"></label>
+    <label>Tool:
+      <select id="toolSelect">
+        <option value="draw">Draw</option>
+        <option value="line">Line</option>
+        <option value="rect">Rectangle</option>
+        <option value="circle">Circle</option>
+      </select>
+    </label>
+    <span id="rotation-group">
+      <label style="color:#eee;font-family:sans-serif;font-size:14px;">
+        Rotate: <input type="range" id="rotAngle" min="0" max="360" value="0" style="width:80px">
+      </label>
+      <span id="rotLabel" style="color:#eee;font-family:sans-serif;font-size:14px;">0°</span>
+    </span>
+    <span id="filled-group">
+      <label style="color:#eee;font-family:sans-serif;font-size:14px;">
+        <input type="checkbox" id="filledCheck"> Filled
+      </label>
+    </span>
+    <button id="clearBtn">Clear</button>
   </div>
 
-  <canvas id="whiteboard" width="800" height="600"></canvas>
+  <div id="canvas-wrap">
+    <canvas id="whiteboard" width="800" height="600"></canvas>
+    <canvas id="preview" width="800" height="600"></canvas>
+  </div>
 
   <script>
     const gamecode = window.location.href.split("ard/")[1];
@@ -55,13 +126,43 @@
 
     const canvas = document.getElementById("whiteboard");
     const ctx = canvas.getContext("2d");
+    const preview = document.getElementById("preview");
+    const pctx = preview.getContext("2d");
+
     let isDrawing = false;
+    let startX = 0, startY = 0;
+
+    const toolSelect = document.getElementById("toolSelect");
+    const rotationGroup = document.getElementById("rotation-group");
+    const filledGroup = document.getElementById("filled-group");
+    const rotAngle = document.getElementById("rotAngle");
+    const rotLabel = document.getElementById("rotLabel");
+
+    toolSelect.addEventListener("change", () => {
+      const t = toolSelect.value;
+      rotationGroup.style.display = t === "rect" ? "flex" : "none";
+      filledGroup.style.display = t === "circle" ? "flex" : "none";
+    });
+
+    rotAngle.addEventListener("input", () => {
+      rotLabel.textContent = rotAngle.value + "°";
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      socket.send("c:");
+    });
 
     socket.onmessage = (event) => {
       const obj = JSON.parse(event.data);
       if (obj.type === "full") {
         const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.onload = () => {
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          preview.width = img.naturalWidth;
+          preview.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+        };
         img.src = "data:image/png;base64," + obj.png;
       } else if (obj.type === "delta") {
         ctx.fillStyle = "rgba(" + obj.r + "," + obj.g + "," + obj.b + "," + (obj.a / 255) + ")";
@@ -71,10 +172,70 @@
       }
     };
 
+    function hexColor() {
+      return document.getElementById("colorPicker").value.slice(1);
+    }
+
+    function brushSize() {
+      return parseInt(document.getElementById("brushSize").value);
+    }
+
     function sendDraw(x, y) {
-      const color = document.getElementById("colorPicker").value.slice(1);
-      const radius = parseInt(document.getElementById("brushSize").value);
-      socket.send("d:" + x + "-" + y + "-" + color + "-" + radius);
+      socket.send("d:" + x + "-" + y + "-" + hexColor() + "-" + brushSize());
+    }
+
+    function sendShape(x1, y1, x2, y2) {
+      const tool = toolSelect.value;
+      const clr = hexColor();
+      const thickness = brushSize();
+
+      if (tool === "line") {
+        socket.send("l:" + x1 + "-" + y1 + "-" + x2 + "-" + y2 + "-" + clr + "-" + thickness);
+      } else if (tool === "rect") {
+        const theta = parseFloat(rotAngle.value);
+        socket.send("r:" + x1 + "-" + y1 + "-" + x2 + "-" + y2 + "-" + clr + "-" + thickness + "-" + theta);
+      } else if (tool === "circle") {
+        const dx = x2 - x1, dy = y2 - y1;
+        const radius = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+        const filled = document.getElementById("filledCheck").checked ? "1" : "0";
+        socket.send("ci:" + x1 + "-" + y1 + "-" + radius + "-" + clr + "-" + filled);
+      }
+    }
+
+    function drawPreview(x1, y1, x2, y2) {
+      pctx.clearRect(0, 0, preview.width, preview.height);
+      const tool = toolSelect.value;
+      const clr = "#" + hexColor();
+      const thickness = brushSize();
+      pctx.strokeStyle = clr;
+      pctx.fillStyle = clr;
+      pctx.lineWidth = thickness;
+
+      if (tool === "line") {
+        pctx.beginPath();
+        pctx.moveTo(x1, y1);
+        pctx.lineTo(x2, y2);
+        pctx.stroke();
+      } else if (tool === "rect") {
+        const theta = parseFloat(rotAngle.value) * Math.PI / 180;
+        pctx.save();
+        const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+        pctx.translate(cx, cy);
+        pctx.rotate(theta);
+        pctx.strokeRect(x1 - cx, y1 - cy, x2 - x1, y2 - y1);
+        pctx.restore();
+      } else if (tool === "circle") {
+        const dx = x2 - x1, dy = y2 - y1;
+        const radius = Math.sqrt(dx * dx + dy * dy);
+        const filled = document.getElementById("filledCheck").checked;
+        pctx.beginPath();
+        pctx.arc(x1, y1, radius, 0, Math.PI * 2);
+        if (filled) {
+          pctx.fill();
+        } else {
+          pctx.stroke();
+        }
+      }
     }
 
     function getPos(e) {
@@ -88,17 +249,37 @@
     canvas.addEventListener("mousedown", (e) => {
       isDrawing = true;
       const pos = getPos(e);
-      sendDraw(pos.x, pos.y);
+      startX = pos.x;
+      startY = pos.y;
+      if (toolSelect.value === "draw") {
+        sendDraw(pos.x, pos.y);
+      }
     });
 
     canvas.addEventListener("mousemove", (e) => {
       if (!isDrawing) return;
       const pos = getPos(e);
-      sendDraw(pos.x, pos.y);
+      if (toolSelect.value === "draw") {
+        sendDraw(pos.x, pos.y);
+      } else {
+        drawPreview(startX, startY, pos.x, pos.y);
+      }
     });
 
-    canvas.addEventListener("mouseup", () => isDrawing = false);
-    canvas.addEventListener("mouseleave", () => isDrawing = false);
+    canvas.addEventListener("mouseup", (e) => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      const pos = getPos(e);
+      if (toolSelect.value !== "draw") {
+        pctx.clearRect(0, 0, preview.width, preview.height);
+        sendShape(startX, startY, pos.x, pos.y);
+      }
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      isDrawing = false;
+      pctx.clearRect(0, 0, preview.width, preview.height);
+    });
   </script>
 </body>
 

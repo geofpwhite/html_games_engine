@@ -2,12 +2,10 @@ package hangman
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
@@ -55,10 +53,9 @@ type hangman struct {
 	guessesLeft         int
 	needNewWord         bool
 	winner              int
-	mut                 *sync.RWMutex
-	chatLogs            []chatLog
-	consecutiveTimeouts int
-	randomlyChosen      bool // boolean for methods to check if they need to act differently because the backend randomly chose a word
+	mut            *sync.RWMutex
+	chatLogs       []chatLog
+	randomlyChosen bool // boolean for methods to check if they need to act differently because the backend randomly chose a word
 	gameID              string
 }
 
@@ -79,41 +76,6 @@ func newGameHangman() *hangman {
 	return gState
 }
 
-/*
-starts a ticker that either times out the current turn and increments it, or resets back to 0 on user input
-*/
-func (gState *hangman) runTicker(timeoutChannel chan<- string, inputChannel <-chan interfaces.Input, closeGameChannel chan<- string) {
-	ticker := time.NewTicker(60 * time.Second)
-	gState.consecutiveTimeouts = 0
-	defer ticker.Stop()
-	// defer close(inputChannel) // this may be bad practice to close from the reader side but
-
-	for {
-		select {
-		case <-ticker.C:
-			log.Println("ticker")
-
-			timeoutChannel <- (*gState).gameID
-			gState.consecutiveTimeouts++
-			if gState.consecutiveTimeouts >= len(gState.players) {
-				closeGameChannel <- gState.gameID
-			}
-
-		case x := <-inputChannel:
-			log.Println("ticker input channel", x)
-			if len((*gState).players) == 0 || x.PlayerIndex() == -1 {
-				return
-			}
-			if x.PlayerIndex() == (*gState).turn {
-				ticker.Stop()
-				ticker = time.NewTicker(60 * time.Second)
-				fmt.Println("ticker reset")
-				gState.consecutiveTimeouts = 0
-			}
-			// ticker = time.NewTicker(1 * time.Second)
-		}
-	}
-}
 
 func (gState *hangman) newPlayer(p interfaces.Player) {
 	gState.mut.Lock()
@@ -169,7 +131,9 @@ func (gState *hangman) randomNewWord() {
 	x, _ := gState.wordCheck.Query("SELECT word FROM words WHERE LENGTH(word)>5 and word not like '%-%' ORDER BY RANDOM() LIMIT 1;")
 	result := ""
 	if x.Next() {
-		x.Scan(&result)
+		if err := x.Scan(&result); err != nil {
+			return
+		}
 		if result == "" {
 			return
 		}
@@ -201,7 +165,9 @@ func (gState *hangman) newWord(word string) {
 	x, _ := gState.wordCheck.Query("select word from words where word ='" + word + "'")
 	result := ""
 	if x.Next() {
-		x.Scan(&result)
+		if err := x.Scan(&result); err != nil {
+			return
+		}
 		if result == "" {
 			return
 		}
@@ -250,20 +216,6 @@ func (gState *hangman) removePlayer(playerIndex int) {
 	}
 }
 
-func (gState *hangman) handleTickerTimeout() string {
-	gState.mut.Lock()
-	defer gState.mut.Unlock()
-	if gState.needNewWord {
-		gState.curHostIndex = (gState.curHostIndex + 1) % len(gState.players)
-		gState.turn = gState.curHostIndex
-	} else {
-		(*gState).turn = ((*gState).turn + 1) % len((*gState).players)
-		if (*gState).curHostIndex == (*gState).turn {
-			(*gState).turn = ((*gState).turn + 1) % len((*gState).players)
-		}
-	}
-	return gState.gameID
-}
 
 func (gState *hangman) changeUsername(playerIndex int, newUsername string) {
 	log.Println("change username")

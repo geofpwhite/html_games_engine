@@ -33,7 +33,9 @@ func WhiteboardRoutes(
 		wb, hash := NewWhiteboard(width, height)
 		games[hash] = wb
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(hash)
+		if err := json.NewEncoder(w).Encode(hash); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 
 	r.HandleFunc("GET /whiteboard/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
@@ -44,12 +46,13 @@ func WhiteboardRoutes(
 		}
 		gameObj, ok := games[gameID]
 		if !ok {
-			conn.Close()
+			conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
 			return
 		}
 		wb, ok := gameObj.(*whiteboard)
 		if !ok {
-			conn.Close()
+			conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
+
 			return
 		}
 
@@ -61,7 +64,7 @@ func WhiteboardRoutes(
 		if pngBytes, err := wb.encodedPNG(); err == nil {
 			err2 := conn.WriteJSON(whiteboardFull{Type: "full", Png: pngBytes})
 			if err2 != nil {
-				conn.Close()
+				conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
 				return
 			}
 		}
@@ -72,8 +75,9 @@ func WhiteboardRoutes(
 			PlayerIndex: len(wb.players),
 		})
 
-		defer conn.Close()
-		HandleWebSocketWhiteboard(conn, inputChannel, wb, false, playerHash, playerHashes, gameID)
+		defer conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
+
+		HandleWebSocketWhiteboard(conn, inputChannel, gameID)
 	})
 
 	r.HandleFunc("GET /whiteboard/{gameID}", func(w http.ResponseWriter, req *http.Request) {
@@ -97,10 +101,7 @@ func queryInt(req *http.Request, key string, def, min, max int) int {
 
 func HandleWebSocketWhiteboard(conn *websocket.Conn,
 	inputChannel chan interfaces.Input,
-	game *whiteboard,
-	reconnect bool,
-	hash string,
-	playerHashes map[string]*websocket.Conn, gameID string,
+	gameID string,
 ) {
 	for {
 		messageType, p, err := conn.ReadMessage()
@@ -191,7 +192,7 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 }
 
 func imgDecode(s string) color.RGBA {
-	clr := color.RGBA{0, 0, 0, 255}
+	clr := color.RGBA{A: 255}
 	for i := 0; i < 6; i += 2 {
 		n, err := strconv.ParseUint(s[i:i+2], 16, 8)
 		if err != nil {
@@ -200,9 +201,9 @@ func imgDecode(s string) color.RGBA {
 		switch i {
 		case 0:
 			clr.R = uint8(n)
-		case 1:
-			clr.G = uint8(n)
 		case 2:
+			clr.G = uint8(n)
+		case 4:
 			clr.B = uint8(n)
 		}
 	}

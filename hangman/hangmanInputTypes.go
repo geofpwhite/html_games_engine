@@ -1,4 +1,4 @@
-package hangman
+﻿package hangman
 
 import interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
@@ -27,10 +27,6 @@ type chatInput struct {
 	playerIndex int
 }
 type exitGameInput struct {
-	gameID      string
-	playerIndex int
-}
-type closeGameInput struct {
 	gameID      string
 	playerIndex int
 }
@@ -110,11 +106,3 @@ func (egi *exitGameInput) ChangeState(gameObj interfaces.Game) {
 	}
 }
 
-func (cgi *closeGameInput) GameID() string {
-	return cgi.gameID
-}
-func (cgi *closeGameInput) PlayerIndex() int {
-	return cgi.playerIndex
-}
-func (cgi *closeGameInput) ChangeState(gameObj interfaces.Game) {
-}

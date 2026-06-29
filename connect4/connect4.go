@@ -8,9 +8,11 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 )
 
-const EMPTY = 0
-const BLUE = 1
-const RED = 2
+const (
+	EMPTY = 0
+	BLUE  = 1
+	RED   = 2
+)
 
 type connect4InsertInput struct {
 	gameID      string
@@ -35,6 +37,7 @@ func (c4i *connect4InsertInput) ChangeState(gameObj interfaces.Game) {
 func (c4i *connect4InsertInput) GameID() string {
 	return c4i.gameID
 }
+
 func (c4i *connect4InsertInput) PlayerIndex() int {
 	return c4i.playerIndex
 }
@@ -51,6 +54,7 @@ func (c4i *connect4RotateInput) ChangeState(gameObj interfaces.Game) {
 func (c4i *connect4RotateInput) GameID() string {
 	return c4i.gameID
 }
+
 func (c4i *connect4RotateInput) PlayerIndex() int {
 	return c4i.playerIndex
 }
@@ -85,10 +89,11 @@ func newGameConnect4() (*connect4, string) {
 func (c4 *connect4) Players() []*interfaces.Player {
 	return c4.players
 }
+
 func (c4 *connect4) JSON() interfaces.ClientState {
 	c4.mut.RLock()
 	defer c4.mut.RUnlock()
-	var cp [][]int = make([][]int, 8)
+	cp := make([][]int, 8)
 	copy(cp, c4.field)
 	slices.Reverse(cp)
 	c4cs := connect4ClientState{Field: cp}
@@ -163,7 +168,6 @@ type queueElement struct {
 
 // rotating may cause both players to have
 func (c4 *connect4) scanForConnect4() map[queueElement]bool {
-
 	c4.mut.RLock()
 	defer c4.mut.RUnlock()
 	winners := map[queueElement]bool{}
@@ -181,7 +185,7 @@ func (c4 *connect4) scanForConnect4() map[queueElement]bool {
 		if poppedElement.upStreak >= 3 || poppedElement.rightStreak >= 3 || poppedElement.rightUpStreak >= 3 || poppedElement.rightDownStreak >= 3 {
 			winners[poppedElement] = true
 		}
-		//check 4 neighbors
+		// check 4 neighbors
 		up := [2]int{poppedElement.coordinate[0] + 1, poppedElement.coordinate[1]}
 		right := [2]int{poppedElement.coordinate[0], poppedElement.coordinate[1] + 1}
 		rightUp := [2]int{poppedElement.coordinate[0] + 1, poppedElement.coordinate[1] + 1}

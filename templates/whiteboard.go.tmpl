@@ -209,7 +209,7 @@
       const thickness = brushSize();
       pctx.strokeStyle = clr;
       pctx.fillStyle = clr;
-      pctx.lineWidth = thickness;
+      pctx.lineWidth = thickness/2;
 
       if (tool === "line") {
         pctx.beginPath();
@@ -226,7 +226,7 @@
         pctx.restore();
       } else if (tool === "circle") {
         const dx = x2 - x1, dy = y2 - y1;
-        const radius = Math.sqrt(dx * dx + dy * dy);
+        const radius = Math.sqrt((dx * dx) + (dy * dy));
         const filled = document.getElementById("filledCheck").checked;
         pctx.beginPath();
         pctx.arc(x1, y1, radius, 0, Math.PI * 2);

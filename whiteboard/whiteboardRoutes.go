@@ -186,7 +186,7 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil {
 				continue
 			}
-			inputChannel <- &circleInput{gameID: gameID, x: x, y: y, radius: radius * 2, clr: clr, filled: filled}
+			inputChannel <- &circleInput{gameID: gameID, x: x, y: y, radius: radius, clr: clr, filled: filled}
 		}
 	}
 }

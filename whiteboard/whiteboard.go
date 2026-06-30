@@ -32,7 +32,7 @@ type drawInput struct {
 	radius int
 }
 
-func (di *drawInput) GameID() string { return di.gameID }
+func (di *drawInput) GameID() string   { return di.gameID }
 func (di *drawInput) PlayerIndex() int { return -1 }
 func (di *drawInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
@@ -56,8 +56,8 @@ type clearInput struct {
 	gameID string
 }
 
-func (ci *clearInput) GameID() string    { return ci.gameID }
-func (ci *clearInput) PlayerIndex() int  { return -1 }
+func (ci *clearInput) GameID() string   { return ci.gameID }
+func (ci *clearInput) PlayerIndex() int { return -1 }
 func (ci *clearInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		fillWhite(&gState.img)
@@ -66,27 +66,34 @@ func (ci *clearInput) ChangeState(gameObj interfaces.Game) {
 }
 
 type lineInput struct {
-	gameID          string
+	gameID         string
 	x1, y1, x2, y2 int
-	clr             color.RGBA
-	thickness       int
+	clr            color.RGBA
+	thickness      int
 }
 
 func (li *lineInput) GameID() string   { return li.gameID }
 func (li *lineInput) PlayerIndex() int { return -1 }
 func (li *lineInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
-		paint.DrawLine(&gState.img, li.x1, li.y1, li.x2, li.y2, li.clr, li.thickness, false)
+		paint.DrawLine(&gState.img,
+			paint.Coords{
+				X: li.x1,
+				Y: li.y1,
+			},
+			paint.Coords{
+				X: li.x2, Y: li.y2,
+			}, li.clr, li.thickness, false)
 		gState.needsFull = true
 	}
 }
 
 type rectInput struct {
-	gameID          string
+	gameID         string
 	x1, y1, x2, y2 int
-	clr             color.RGBA
-	thickness       int
-	thetaDeg        float64
+	clr            color.RGBA
+	thickness      int
+	thetaDeg       float64
 }
 
 func (ri *rectInput) GameID() string   { return ri.gameID }
@@ -95,9 +102,30 @@ func (ri *rectInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		if ri.thetaDeg != 0 {
 			theta := ri.thetaDeg * math.Pi / 180
-			paint.DrawRotatedRectangle(&gState.img, ri.x1, ri.y1, ri.x2, ri.y2, theta, ri.clr, ri.thickness, false)
+			paint.DrawRotatedRectangle(
+				&gState.img,
+				paint.Coords{
+					X: ri.x1,
+					Y: ri.y1,
+				},
+				paint.Coords{
+					X: ri.x2,
+					Y: ri.y2,
+				},
+				theta,
+				ri.clr,
+				ri.thickness,
+				false)
 		} else {
-			paint.DrawRectangle(&gState.img, ri.x1, ri.y1, ri.x2, ri.y2, ri.clr, ri.thickness, false)
+			paint.DrawRectangle(
+				&gState.img,
+				paint.Coords{
+					X: ri.x1, Y: ri.y1,
+				},
+				paint.Coords{
+					X: ri.x2, Y: ri.y2,
+				},
+				ri.clr, ri.thickness, false)
 		}
 		gState.needsFull = true
 	}

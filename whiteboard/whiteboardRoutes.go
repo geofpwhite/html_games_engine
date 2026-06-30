@@ -152,7 +152,7 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil {
 				continue
 			}
-			inputChannel <- &lineInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness}
+			inputChannel <- &lineInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2}
 
 		case "r":
 			// r:x1-y1-x2-y2-color-thickness-theta
@@ -170,7 +170,7 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil || e6 != nil {
 				continue
 			}
-			inputChannel <- &rectInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness, thetaDeg: theta}
+			inputChannel <- &rectInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2, thetaDeg: theta}
 
 		case "ci":
 			// ci:x-y-radius-color-filled
@@ -186,7 +186,7 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil {
 				continue
 			}
-			inputChannel <- &circleInput{gameID: gameID, x: x, y: y, radius: radius, clr: clr, filled: filled}
+			inputChannel <- &circleInput{gameID: gameID, x: x, y: y, radius: radius * 2, clr: clr, filled: filled}
 		}
 	}
 }

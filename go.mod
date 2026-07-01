@@ -3,7 +3,7 @@ module github.com/geofpwhite/html_games_engine
 go 1.25.0
 
 require (
-	github.com/geofpwhite/paint v0.1.0
+	github.com/geofpwhite/paint v0.1.1
 	github.com/gorilla/websocket v1.5.3
 	modernc.org/sqlite v1.46.1
 )

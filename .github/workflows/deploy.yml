@@ -27,6 +27,15 @@ jobs:
             ghcr.io/geofpwhite/html_games_engine:latest
             ghcr.io/geofpwhite/html_games_engine:${{ github.sha }}
 
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: pgsql
+          push: true
+          tags: |
+            ghcr.io/geofpwhite/html_games_engine-db:latest
+            ghcr.io/geofpwhite/html_games_engine-db:${{ github.sha }}
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest

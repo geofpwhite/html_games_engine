@@ -1,9 +1,6 @@
 services:
   db:
-    build:
-      context: .
-      target: pgsql
-    image: geofpwhite/html_games_engine-db:latest
+    image: ghcr.io/geofpwhite/html_games_engine-db:latest
     container_name: db
     environment:
       - POSTGRES_PASSWORD=app

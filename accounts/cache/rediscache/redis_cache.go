@@ -139,9 +139,11 @@ func (c *cacher) PurgeInactive(maxAge time.Duration) ([]int32, error) {
 	defer cancel()
 
 	cutoff := time.Now().Add(-maxAge).Unix()
-	staleIDs, err := c.client.ZRangeByScore(ctx, onlineActivityKey, &redis.ZRangeBy{
-		Min: "-inf",
-		Max: strconv.FormatInt(cutoff, 10),
+	staleIDs, err := c.client.ZRangeArgs(ctx, redis.ZRangeArgs{
+		Key:     onlineActivityKey,
+		Start:   "-inf",
+		Stop:    strconv.FormatInt(cutoff, 10),
+		ByScore: true,
 	}).Result()
 	if err != nil {
 		return nil, err

@@ -1,6 +1,38 @@
 services:
+  db:
+    build:
+      context: .
+      target: pgsql
+    image: geofpwhite/html_games_engine-db:latest
+    container_name: db
+    environment:
+      - POSTGRES_PASSWORD=app
+      - POSTGRES_USER=app
+      - POSTGRES_DB=accounts
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./accounts/sql/schema.sql:/docker-entrypoint-initdb.d/db_setup.sql
+    restart: unless-stopped
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   games-engine:
     image: ghcr.io/geofpwhite/html_games_engine:latest
     restart: always
+    environment:
+      - DATABASE_URL=postgresql://app:app@db:5432/accounts?sslmode=disable
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - db
+      - redis
     ports:
       - "8080:8080"

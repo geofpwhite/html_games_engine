@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	accounts "github.com/geofpwhite/html_games_engine/accounts"
+	"github.com/geofpwhite/html_games_engine/accounts/cache/rediscache"
+	"github.com/geofpwhite/html_games_engine/accounts/store/pgstore"
 	connectthedots "github.com/geofpwhite/html_games_engine/connectTheDots"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	tictactoe "github.com/geofpwhite/html_games_engine/ticTacToe"
@@ -44,6 +47,8 @@ func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game,
 	connectthedots.ConnectTheDotsRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
 	tictactoe.TicTacToeRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
 	whiteboard.WhiteboardRoutes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
+
+	accounts.AccountRoutes(r, tmpl, &upgrader, pgstore.NewStore(), rediscache.NewCache())
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

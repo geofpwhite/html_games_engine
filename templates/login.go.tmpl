@@ -1,53 +1,56 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>{{ .Title }}</title>
+		<title>Login</title>
 	</head>
 	<body>
-		{{ template "navbar" }}
+		{{ template "navbar" . }}
 		<form id="login-form">
 			<ul>
 				<li>
-					<label for="Username"><b>Username</b></label>
-					<input type="text" placeholder="Enter Username" name="Username" id="username"  required>
+					<label for="username"><b>Username</b></label>
+					<input type="text" placeholder="Enter Username" name="Username" id="username" required>
 				</li>
 
 				<li>
-					<label for="Password"><b>Password</b></label>
+					<label for="password"><b>Password</b></label>
 					<input type="password" placeholder="Enter Password" name="Password" id="password" required>
 				</li>
 				<li>
-					<button type="submit" >Login</button>
+					<button type="submit">Login</button>
 				</li>
 			</ul>
+			<p id="error" style="color:red;"></p>
 		</form>
 	</body>
-
+</html>
 <script type="text/javascript">
 document.getElementById('login-form').addEventListener('submit', function(event) {
   event.preventDefault(); // Prevent the form from submitting normally
 
   var username = document.getElementById('username').value;
   var password = document.getElementById('password').value;
+  var errorEl = document.getElementById('error');
+  errorEl.textContent = '';
 
-  fetch('/account/login/', {
+  fetch('/accounts/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({username: username, password: password}),
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      // Login was successful, do something here
-    } else {
-      // Login failed, do something else here
+  .then(async response => {
+    if (!response.ok) {
+      throw new Error(await response.text());
     }
+    return response.json();
+  })
+  .then(data => {
+    window.location.href = '/';
   })
   .catch((error) => {
-    console.error('Error:', error);
+    errorEl.textContent = 'Login failed: ' + error.message;
   });
 });
 </script>
-</html>

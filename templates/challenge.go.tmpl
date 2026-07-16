@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Challenge a Player</title>
+		<style>
+			#online-list { list-style: none; padding: 0; }
+			#online-list li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+			#incoming-challenge { display: none; border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+		</style>
+	</head>
+	<body>
+		{{ template "navbar" . }}
+		<h2>Online Players</h2>
+		<p id="error" style="color:red;"></p>
+		<ul id="online-list"></ul>
+
+		<div id="incoming-challenge">
+			<p id="incoming-challenge-text"></p>
+			<button id="accept-button">Accept</button>
+			<button id="decline-button">Decline</button>
+		</div>
+	</body>
+</html>
+<script type="text/javascript">
+var gamePaths = {
+  connect4: function(id) { return '/connect4/' + id; },
+  tictactoe: function(id) { return '/tictactoe/' + id; },
+  connectthedots: function(id) { return '/connect-the-dots/' + id; },
+};
+
+var errorEl = document.getElementById('error');
+var listEl = document.getElementById('online-list');
+var incomingEl = document.getElementById('incoming-challenge');
+var incomingTextEl = document.getElementById('incoming-challenge-text');
+var acceptButton = document.getElementById('accept-button');
+var declineButton = document.getElementById('decline-button');
+var currentChallengeID = null;
+
+function loadOnlineUsers() {
+  fetch('/accounts/online')
+    .then(async response => {
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    })
+    .then(users => {
+      if (!users) return;
+      listEl.innerHTML = '';
+      users.forEach(function(user) {
+        var li = document.createElement('li');
+
+        var name = document.createElement('span');
+        name.textContent = user.Username;
+
+        var select = document.createElement('select');
+        Object.keys(gamePaths).forEach(function(gameType) {
+          var option = document.createElement('option');
+          option.value = gameType;
+          option.textContent = gameType;
+          select.appendChild(option);
+        });
+
+        var button = document.createElement('button');
+        button.textContent = 'Challenge';
+        button.onclick = function() { sendChallenge(user.Username, select.value); };
+
+        li.appendChild(name);
+        li.appendChild(select);
+        li.appendChild(button);
+        listEl.appendChild(li);
+      });
+    })
+    .catch((error) => {
+      errorEl.textContent = 'Error loading online users: ' + error.message;
+    });
+}
+
+function sendChallenge(targetUsername, gameType) {
+  errorEl.textContent = '';
+  fetch('/accounts/challenge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetUsername: targetUsername, gameType: gameType }),
+  })
+  .then(async response => {
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+  })
+  .catch((error) => {
+    errorEl.textContent = 'Error sending challenge: ' + error.message;
+  });
+}
+
+function respondToChallenge(accept) {
+  if (!currentChallengeID) return;
+  var action = accept ? 'accept' : 'decline';
+  fetch('/accounts/challenge/' + currentChallengeID + '/' + action, { method: 'POST' })
+    .then(async response => {
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      if (accept) {
+        return response.json();
+      }
+    })
+    .then(data => {
+      incomingEl.style.display = 'none';
+      currentChallengeID = null;
+      if (accept && data && gamePaths[data.gameType]) {
+        window.location.href = gamePaths[data.gameType](data.gameID);
+      }
+    })
+    .catch((error) => {
+      errorEl.textContent = 'Error responding to challenge: ' + error.message;
+    });
+}
+
+acceptButton.onclick = function() { respondToChallenge(true); };
+declineButton.onclick = function() { respondToChallenge(false); };
+
+function connectWebSocket() {
+  var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var socket = new WebSocket(protocol + '//' + window.location.host + '/accounts/ws');
+
+  socket.onmessage = function(event) {
+    var msg = JSON.parse(event.data);
+    switch (msg.type) {
+      case 'challenge':
+        currentChallengeID = msg.challengeID;
+        incomingTextEl.textContent = msg.fromUsername + ' has challenged you to ' + msg.gameType;
+        incomingEl.style.display = 'block';
+        break;
+      case 'challenge_accepted':
+        if (gamePaths[msg.gameType]) {
+          window.location.href = gamePaths[msg.gameType](msg.gameID);
+        }
+        break;
+      case 'challenge_declined':
+        errorEl.textContent = 'Your challenge to play ' + msg.gameType + ' was declined';
+        break;
+    }
+  };
+
+  socket.onclose = function() {
+    window.setTimeout(connectWebSocket, 3000);
+  };
+}
+
+loadOnlineUsers();
+connectWebSocket();
+</script>

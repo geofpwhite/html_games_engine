@@ -1,13 +1,18 @@
 package main
 
 import (
+	"log/slog"
+	"os"
+
 	engine "github.com/geofpwhite/html_games_engine/engine"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
-
 	"github.com/gorilla/websocket"
 )
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	slog.SetDefault(logger)
+
 	games := make(map[string]interfaces.Game)
 	playerHashes := make(map[string]*websocket.Conn)
 	inputChannel := make(chan interfaces.Input)

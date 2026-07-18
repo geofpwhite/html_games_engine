@@ -9,6 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - db-data:/var/lib/postgresql/data
       - ./accounts/sql/schema.sql:/docker-entrypoint-initdb.d/db_setup.sql
     restart: unless-stopped
 
@@ -33,3 +34,6 @@ services:
       - redis
     ports:
       - "8080:8080"
+
+volumes:
+  db-data:

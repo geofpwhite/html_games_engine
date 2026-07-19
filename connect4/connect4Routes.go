@@ -38,7 +38,8 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 		gameID := req.PathValue("gameID")
 		conn, err := upgrader.Upgrade(w, req, nil)
 		if err != nil || gameID == "" {
-			panic("/connect4/ws/:gameID gave an error")
+			http.Error(w, "error connecting", http.StatusInternalServerError)
+			return
 		}
 		gameObj := games[gameID]
 		game := gameObj.(*connect4)
@@ -46,11 +47,8 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 		playerHashes[playerHash] = conn
 		if game.playersConnected >= 2 {
 			return
-		} else if game.playersConnected == 1 {
-			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 1})
-			game.playersConnected++
-		} else if game.playersConnected == 0 {
-			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 0})
+		} else {
+			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: game.playersConnected})
 			game.playersConnected++
 		}
 		defer func() {

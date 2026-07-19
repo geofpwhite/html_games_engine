@@ -3,6 +3,7 @@
 package accounts
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -249,6 +250,7 @@ func (a *accountsAPI) onlineHandler(w http.ResponseWriter, r *http.Request, user
 func (a *accountsAPI) wsHandler(upgrader *websocket.Upgrader) func(w http.ResponseWriter, r *http.Request, userID int32) {
 	return func(w http.ResponseWriter, r *http.Request, userID int32) {
 		conn, err := upgrader.Upgrade(w, r, nil)
+		slog.Log(context.Background(), slog.LevelDebug, "wsHandler Called")
 		if err != nil {
 			return
 		}

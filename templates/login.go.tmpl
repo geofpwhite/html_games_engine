@@ -33,7 +33,7 @@ document.getElementById('login-form').addEventListener('submit', function(event)
   var errorEl = document.getElementById('error');
   errorEl.textContent = '';
 
-  fetch('/accounts/login', {
+  fetch('/games/accounts/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

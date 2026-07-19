@@ -37,7 +37,7 @@ var declineButton = document.getElementById('decline-button');
 var currentChallengeID = null;
 
 function loadOnlineUsers() {
-  fetch('/accounts/online')
+  fetch('games/accounts/online')
     .then(async response => {
       if (response.status === 401) {
         window.location.href = '/login';
@@ -82,7 +82,7 @@ function loadOnlineUsers() {
 
 function sendChallenge(targetUsername, gameType) {
   errorEl.textContent = '';
-  fetch('/accounts/challenge', {
+  fetch('/games/accounts/challenge', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ targetUsername: targetUsername, gameType: gameType }),
@@ -100,7 +100,7 @@ function sendChallenge(targetUsername, gameType) {
 function respondToChallenge(accept) {
   if (!currentChallengeID) return;
   var action = accept ? 'accept' : 'decline';
-  fetch('/accounts/challenge/' + currentChallengeID + '/' + action, { method: 'POST' })
+  fetch('/games/accounts/challenge/' + currentChallengeID + '/' + action, { method: 'POST' })
     .then(async response => {
       if (!response.ok) {
         throw new Error(await response.text());
@@ -126,7 +126,7 @@ declineButton.onclick = function() { respondToChallenge(false); };
 
 function connectWebSocket() {
   var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  var socket = new WebSocket(protocol + '//' + window.location.host + '/accounts/ws');
+  var socket = new WebSocket(protocol + '//' + window.location.host + '/games/accounts/ws');
 
   socket.onmessage = function(event) {
     var msg = JSON.parse(event.data);

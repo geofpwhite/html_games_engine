@@ -47,7 +47,7 @@ document.getElementById('register-form').addEventListener('submit', function(eve
     return response.json();
   })
   .then(data => {
-    window.location.href = '/login';
+    window.location.href = '/games/login';
   })
   .catch((error) => {
     errorEl.textContent = 'Registration failed: ' + error.message;

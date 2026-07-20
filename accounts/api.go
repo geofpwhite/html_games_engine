@@ -114,6 +114,7 @@ func (a *accountsAPI) authorized(next func(w http.ResponseWriter, r *http.Reques
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+		slog.Log(r.Context(), slog.LevelInfo, "successfully authorized")
 		next(w, r, userID)
 	}
 }

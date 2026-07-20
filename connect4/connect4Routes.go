@@ -2,8 +2,8 @@ package connect4
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strconv"
@@ -92,7 +92,7 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 			return
 		}
 		game := (games[gameID]).(*connect4)
-		fmt.Println(game)
+		slog.Log(req.Context(), slog.LevelInfo, "%v", game)
 		rows := make([][]string, 8)
 		for i := range rows {
 			rows[i] = make([]string, 8)

@@ -104,7 +104,7 @@ func (a *accountsAPI) authorized(next func(w http.ResponseWriter, r *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie(sessionCookieName)
 		if err != nil {
-			slog.Log(r.Context(), slog.LevelInfo, "unauthorized", "err:", err)
+			slog.Log(r.Context(), slog.LevelInfo, "unauthorized", "err:", err, "cookies", r.Cookies())
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

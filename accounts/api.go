@@ -256,7 +256,10 @@ func (a *accountsAPI) wsHandler(upgrader *websocket.Upgrader) func(w http.Respon
 		if err != nil {
 			return
 		}
-		conn.WriteMessage(websocket.BinaryMessage, []byte("connected"))
+		err = conn.WriteMessage(websocket.BinaryMessage, []byte("connected"))
+		if err != nil {
+			return
+		}
 
 		a.connsMu.Lock()
 		if old, ok := a.conns[userID]; ok {

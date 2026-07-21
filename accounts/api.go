@@ -168,7 +168,7 @@ func (a *accountsAPI) loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    sessionKey,
-		Path:     "/accounts/",
+		Path:     "/games/accounts/",
 		MaxAge:   int(sessionMaxAge.Seconds()),
 		HttpOnly: true,
 		Secure:   true,
@@ -193,7 +193,7 @@ func (a *accountsAPI) logoutHandler(w http.ResponseWriter, r *http.Request, user
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    "",
-		Path:     "/accounts/",
+		Path:     "/games/accounts/",
 		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   true,

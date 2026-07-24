@@ -130,6 +130,8 @@
     const pctx = preview.getContext("2d");
 
     let isDrawing = false;
+    let prevHolding = {};
+    let isHolding = false;
     let startX = 0, startY = 0;
 
     const toolSelect = document.getElementById("toolSelect");
@@ -253,6 +255,10 @@
       startY = pos.y;
       if (toolSelect.value === "draw") {
         sendDraw(pos.x, pos.y);
+        if (isHolding && prevHolding != {}) 
+          socket.send("l:" + pos.x + "-" + pos.y + "-" + prevHolding.x + "-" + prevHolding.y + "-" + clr + "-" + 5);
+        isHolding = true
+        prevHolding=pos
       }
     });
 
@@ -269,6 +275,7 @@
     canvas.addEventListener("mouseup", (e) => {
       if (!isDrawing) return;
       isDrawing = false;
+      isHolding = false;
       const pos = getPos(e);
       if (toolSelect.value !== "draw") {
         pctx.clearRect(0, 0, preview.width, preview.height);

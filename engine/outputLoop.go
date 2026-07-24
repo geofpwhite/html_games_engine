@@ -11,7 +11,6 @@ func OutputLoop(outputChannel <-chan string, games map[string]interfaces.Game, p
 	var json interfaces.ClientState
 	var conn *websocket.Conn
 	for gameID := range outputChannel {
-
 		game = games[gameID]
 		json = game.JSON()
 		for _, p := range game.Players() {

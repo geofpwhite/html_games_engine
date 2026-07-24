@@ -1,19 +1,20 @@
-package IDGenerator
+package idgenerator
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"math/big"
 )
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func GenerateID(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz"
 
 	b := make([]byte, length)
 	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			panic(err)
+		}
+		b[i] = charset[n.Int64()]
 	}
 	return string(b)
-
 }

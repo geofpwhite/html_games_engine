@@ -3,6 +3,7 @@ package rediscache
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -15,9 +16,9 @@ import (
 const sessionTTL = 20 * time.Minute
 
 const (
-	sessionKeyPrefix = "session:"
+	sessionKeyPrefix  = "session:"
 	userSessionPrefix = "usersession:"
-	onlineUsersKey   = "online_users"
+	onlineUsersKey    = "online_users"
 	onlineActivityKey = "online_activity"
 )
 
@@ -60,11 +61,14 @@ func (c *cacher) GetSession(sessionKey string) (int32, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	val, err := c.client.Get(ctx, sessionKeyPrefix+sessionKey).Int()
+	userIDStr, err := c.client.Get(ctx, sessionKeyPrefix+sessionKey).Result()
 	if err != nil {
 		return 0, err
 	}
-	userIDStr := strconv.Itoa(val)
+	val, err := strconv.ParseInt(userIDStr, 10, 32)
+	if err != nil {
+		return 0, err
+	}
 
 	if _, err := c.client.Expire(ctx, sessionKeyPrefix+sessionKey, sessionTTL).Result(); err != nil {
 		return 0, err
@@ -84,7 +88,7 @@ func (c *cacher) DeleteSession(sessionKey string) error {
 	defer cancel()
 
 	userIDStr, err := c.client.Get(ctx, sessionKeyPrefix+sessionKey).Result()
-	if err != nil && err != redis.Nil {
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return err
 	}
 
@@ -118,7 +122,7 @@ func (c *cacher) ListOnline() ([]cache.OnlineUser, error) {
 	}
 	users := make([]cache.OnlineUser, 0, len(entries))
 	for idStr, username := range entries {
-		id, err := strconv.Atoi(idStr)
+		id, err := strconv.ParseInt(idStr, 10, 32)
 		if err != nil {
 			continue
 		}
@@ -156,15 +160,15 @@ func (c *cacher) PurgeInactive(maxAge time.Duration) ([]int32, error) {
 			if delErr := c.client.Del(ctx, sessionKeyPrefix+sessionKey).Err(); delErr != nil {
 				return purged, delErr
 			}
-		} else if err != redis.Nil {
+		} else if !errors.Is(err, redis.Nil) {
 			return purged, err
 		}
 
-		if err := c.logout(ctx, idStr); err != nil {
-			return purged, err
+		if logoutErr := c.logout(ctx, idStr); logoutErr != nil {
+			return purged, logoutErr
 		}
 
-		id, err := strconv.Atoi(idStr)
+		id, err := strconv.ParseInt(idStr, 10, 32)
 		if err != nil {
 			continue
 		}

@@ -3,7 +3,7 @@ package interfaces
 type InputType string
 
 /*
-interface for each game state struct to implement
+Game interface for each game state struct to implement
 */
 type Game interface {
 	Players() []*Player
@@ -11,12 +11,12 @@ type Game interface {
 }
 
 /*
-interface for each game type's user input object to implement
+Input interface for each game type's user input object to implement
 */
 type Input interface {
 	GameID() string
 	PlayerIndex() int
-	ChangeState(Game)
+	ChangeState(g Game)
 }
 
 type Player struct {
@@ -27,6 +27,6 @@ type Player struct {
 }
 
 /*
-interface for each game type's json-sendable object to implement
+ClientState interface for each game type's json-sendable object to implement
 */
-type ClientState interface{}
+type ClientState any

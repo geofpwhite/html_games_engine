@@ -5,7 +5,10 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 )
 
-const X, O = 1, 2
+const (
+	X = 1
+	O = 2
+)
 
 type ticTacToe struct {
 	field       [3][3]int

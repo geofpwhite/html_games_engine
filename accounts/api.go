@@ -78,7 +78,7 @@ func AccountRoutes(
 		"GET /change-password": "change_password.go.tmpl",
 		"GET /challenge":       "challenge.go.tmpl",
 	} {
-		r.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
+		r.HandleFunc(path, func(w http.ResponseWriter, _ *http.Request) {
 			if err := tmpl.ExecuteTemplate(w, page, nil); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
@@ -229,7 +229,7 @@ func (a *accountsAPI) changePasswordHandler(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 }
 
-func (a *accountsAPI) onlineHandler(w http.ResponseWriter, r *http.Request, userID int32) {
+func (a *accountsAPI) onlineHandler(w http.ResponseWriter, _ *http.Request, userID int32) {
 	online, err := a.cache.ListOnline()
 	if err != nil {
 		http.Error(w, "error listing online users", http.StatusInternalServerError)
@@ -264,7 +264,7 @@ func (a *accountsAPI) wsHandler(upgrader *websocket.Upgrader) func(w http.Respon
 
 		a.connsMu.Lock()
 		if old, ok := a.conns[userID]; ok {
-			old.Close() //nolint:errcheck // replaced by the new connection below
+			old.Close()
 		}
 		a.conns[userID] = conn
 		a.connsMu.Unlock()
@@ -285,7 +285,7 @@ func (a *accountsAPI) removeConn(userID int32, conn *websocket.Conn) {
 		delete(a.conns, userID)
 	}
 	a.connsMu.Unlock()
-	conn.Close() //nolint:errcheck // nothing to do if closing fails
+	conn.Close()
 }
 
 func (a *accountsAPI) closeConn(userID int32) {
@@ -296,7 +296,7 @@ func (a *accountsAPI) closeConn(userID int32) {
 	}
 	a.connsMu.Unlock()
 	if ok {
-		conn.Close() //nolint:errcheck // nothing to do if closing fails
+		conn.Close()
 	}
 }
 

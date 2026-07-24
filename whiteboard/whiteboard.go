@@ -7,7 +7,7 @@ import (
 	"image/png"
 	"math"
 
-	"github.com/geofpwhite/html_games_engine/IDGenerator"
+	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	"github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/paint"
 )

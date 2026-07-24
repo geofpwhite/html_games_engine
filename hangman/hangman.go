@@ -1,6 +1,7 @@
 package hangman
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"slices"
@@ -10,12 +11,12 @@ import (
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // sqlite driver registration for database/sql
 )
 
 const (
-	HOST_WINS  = 1
-	HOST_LOSES = 2
+	HostWins  = 1
+	HostLoses = 2
 )
 
 type hangmanClientState struct {
@@ -43,20 +44,20 @@ type chatLog struct {
 struct containing necessary fields for game to run
 */
 type hangman struct {
-	wordCheck           *sql.DB
-	currentWord         string
-	revealedWord        string
-	guessed             string
-	players             []*interfaces.Player
-	curHostIndex        int
-	turn                int
-	guessesLeft         int
-	needNewWord         bool
-	winner              int
+	wordCheck      *sql.DB
+	currentWord    string
+	revealedWord   string
+	guessed        string
+	players        []*interfaces.Player
+	curHostIndex   int
+	turn           int
+	guessesLeft    int
+	needNewWord    bool
+	winner         int
 	mut            *sync.RWMutex
 	chatLogs       []chatLog
 	randomlyChosen bool // boolean for methods to check if they need to act differently because the backend randomly chose a word
-	gameID              string
+	gameID         string
 }
 
 func newGameHangman() *hangman {
@@ -75,7 +76,6 @@ func newGameHangman() *hangman {
 	gState.gameID = gameCode
 	return gState
 }
-
 
 func (gState *hangman) newPlayer(p interfaces.Player) {
 	gState.mut.Lock()
@@ -103,17 +103,18 @@ func (gState *hangman) guess(letter rune) bool {
 		}
 		x := 0x10p23
 		print(x)
-		if gState.currentWord == gState.revealedWord {
+		switch {
+		case gState.currentWord == gState.revealedWord:
 			gState.needNewWord = true
 			gState.turn = (gState.curHostIndex + 2) % len(gState.players)
 			gState.curHostIndex = (gState.curHostIndex + 1) % len(gState.players)
-			gState.winner = HOST_LOSES
-		} else if gState.guessesLeft == 1 && !good {
+			gState.winner = HostLoses
+		case gState.guessesLeft == 1 && !good:
 			gState.needNewWord = true
 			gState.turn = (gState.curHostIndex + 2) % len(gState.players)
-			gState.winner = HOST_WINS
+			gState.winner = HostWins
 			gState.curHostIndex = (gState.curHostIndex + 1) % len(gState.players)
-		} else if !good {
+		case !good:
 			gState.guessesLeft--
 			gState.turn = (gState.turn + 1) % len(gState.players)
 			if gState.turn == gState.curHostIndex && !gState.randomlyChosen {
@@ -128,7 +129,12 @@ func (gState *hangman) guess(letter rune) bool {
 func (gState *hangman) randomNewWord() {
 	gState.mut.Lock()
 	defer gState.mut.Unlock()
-	x, _ := gState.wordCheck.Query("SELECT word FROM words WHERE LENGTH(word)>5 and word not like '%-%' ORDER BY RANDOM() LIMIT 1;")
+	x, err := gState.wordCheck.QueryContext(context.Background(),
+		"SELECT word FROM words WHERE LENGTH(word)>5 and word not like '%-%' ORDER BY RANDOM() LIMIT 1;")
+	if err != nil {
+		return
+	}
+	defer x.Close()
 	result := ""
 	if x.Next() {
 		if err := x.Scan(&result); err != nil {
@@ -138,6 +144,9 @@ func (gState *hangman) randomNewWord() {
 			return
 		}
 	} else {
+		if err := x.Err(); err != nil {
+			return
+		}
 		return
 	}
 	gState.currentWord = result
@@ -162,7 +171,11 @@ func (gState *hangman) newWord(word string) {
 			return
 		}
 	}
-	x, _ := gState.wordCheck.Query("select word from words where word ='" + word + "'")
+	x, err := gState.wordCheck.QueryContext(context.Background(), "select word from words where word = ?", word)
+	if err != nil {
+		return
+	}
+	defer x.Close()
 	result := ""
 	if x.Next() {
 		if err := x.Scan(&result); err != nil {
@@ -172,6 +185,9 @@ func (gState *hangman) newWord(word string) {
 			return
 		}
 	} else {
+		if err := x.Err(); err != nil {
+			return
+		}
 		return
 	}
 	gState.currentWord = word
@@ -207,15 +223,14 @@ func (gState *hangman) removePlayer(playerIndex int) {
 		gState.closeGame()
 		return
 	}
-	gState.turn = gState.turn % len(gState.players)
-	gState.curHostIndex = gState.curHostIndex % len(gState.players)
+	gState.turn %= len(gState.players)
+	gState.curHostIndex %= len(gState.players)
 	if gState.needNewWord && gState.curHostIndex != gState.turn {
 		gState.turn = gState.curHostIndex
 	} else if !gState.needNewWord && gState.curHostIndex == gState.turn {
 		gState.turn = (gState.turn + 1) % len(gState.players)
 	}
 }
-
 
 func (gState *hangman) changeUsername(playerIndex int, newUsername string) {
 	log.Println("change username")
@@ -247,8 +262,8 @@ func (gState *hangman) chat(message string, playerIndex int) {
 func (gState *hangman) JSON() interfaces.ClientState {
 	gState.mut.RLock()
 	defer gState.mut.RUnlock()
-	usernames := []string{}
-	for _, p := range (*gState).players {
+	usernames := make([]string, 0, len(gState.players))
+	for _, p := range gState.players {
 		usernames = append(usernames, p.Username)
 	}
 

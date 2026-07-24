@@ -14,24 +14,25 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.HandleFunc("GET /connect-the-dots", func(w http.ResponseWriter, req *http.Request) {
+func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+) {
+	r.HandleFunc("GET /connect-the-dots", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_connectTheDots.go.tmpl", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 
-	r.HandleFunc("GET /connect-the-dots-test", func(w http.ResponseWriter, req *http.Request) {
-		str := "auto"
-		for i := 0; i < 14; i++ {
-			str += " auto"
-		}
-		if err := tmpl.ExecuteTemplate(w, "connectTheDots.go.tmpl", map[string]any{"Rows": [15][15]int{}, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{}}); err != nil {
+	r.HandleFunc("GET /connect-the-dots-test", func(w http.ResponseWriter, _ *http.Request) {
+		str := "auto" + strings.Repeat(" auto", 14)
+		if err := tmpl.ExecuteTemplate(w, "connectTheDots.go.tmpl", map[string]any{
+			"Rows": [15][15]int{}, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{},
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 
-	r.HandleFunc("GET /connect-the-dots/new_game", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /connect-the-dots/new_game", func(w http.ResponseWriter, _ *http.Request) {
 		c4, hash := NewGameConnectTheDots(8)
 		var g interfaces.Game = c4
 		games[hash] = g
@@ -41,7 +42,7 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 		}
 	})
 
-	r.HandleFunc("GET /connect-the-dots/reconnect/{gameID}/{playerHash}", func(w http.ResponseWriter, req *http.Request) {})
+	r.HandleFunc("GET /connect-the-dots/reconnect/{gameID}/{playerHash}", func(_ http.ResponseWriter, _ *http.Request) {})
 
 	r.HandleFunc("GET /connect-the-dots/ws/{gameID}", func(w http.ResponseWriter, req *http.Request) {
 		gameID := req.PathValue("gameID")
@@ -53,16 +54,17 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 		game := gameObj.(*connectTheDots)
 		playerHash := IDGenerator.GenerateID(10)
 		playerHashes[playerHash] = conn
-		if game.playersConnected >= 2 {
-			return
-		} else if game.playersConnected == 1 {
-			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 1})
-			game.playersConnected++
-		} else if game.playersConnected == 0 {
+		switch game.playersConnected {
+		case 0:
 			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 0})
 			game.playersConnected++
+		case 1:
+			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: 1})
+			game.playersConnected++
+		default:
+			return
 		}
-		defer conn.Close() //nolint:errcheck
+		defer conn.Close()
 
 		HandleWebSocketConnectTheDots(conn, inputChannel, gameObj.(*connectTheDots), false, playerHash, playerHashes, gameID)
 	})
@@ -72,11 +74,10 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 		if gameID == "" {
 			http.Error(w, "no game matches that ID", http.StatusNotFound)
 		}
-		str := "auto"
-		for i := 0; i < 14; i++ {
-			str += " auto"
-		}
-		if err := tmpl.ExecuteTemplate(w, "connectTheDots.go.tmpl", map[string]any{"Rows": (games[gameID]).(*connectTheDots).field, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{}}); err != nil {
+		str := "auto" + strings.Repeat(" auto", 14)
+		if err := tmpl.ExecuteTemplate(w, "connectTheDots.go.tmpl", map[string]any{
+			"Rows": (games[gameID]).(*connectTheDots).field, "SizeInt": 8, "GridTemplate": str, "SizeGrid": [7]int{},
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
@@ -85,9 +86,9 @@ func ConnectTheDotsRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *w
 func HandleWebSocketConnectTheDots(conn *websocket.Conn,
 	inputChannel chan interfaces.Input,
 	game *connectTheDots,
-	reconnect bool,
+	_ bool,
 	hash string,
-	playerHashes map[string]*websocket.Conn, gameID string,
+	_ map[string]*websocket.Conn, gameID string,
 ) {
 	for {
 		messageType, p, err := conn.ReadMessage()
@@ -95,8 +96,7 @@ func HandleWebSocketConnectTheDots(conn *websocket.Conn,
 			return
 		}
 		playerIndex := slices.IndexFunc(game.players, func(p *interfaces.Player) bool { return p.PlayerID == hash })
-		switch messageType {
-		case websocket.TextMessage:
+		if messageType == websocket.TextMessage {
 			pString := string(p)
 			switch pString[:2] {
 			case "a:":

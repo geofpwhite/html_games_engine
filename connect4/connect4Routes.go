@@ -17,14 +17,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.HandleFunc("GET /connect4", func(w http.ResponseWriter, req *http.Request) {
+func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+) {
+	r.HandleFunc("GET /connect4", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_connect4.go.tmpl", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 
-	r.HandleFunc("GET /connect4/new_game", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /connect4/new_game", func(w http.ResponseWriter, _ *http.Request) {
 		c4, hash := newGameConnect4()
 		var g interfaces.Game = c4
 		games[hash] = g
@@ -48,12 +50,11 @@ func Connect4Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websock
 		playerHashes[playerHash] = conn
 		if game.playersConnected >= 2 {
 			return
-		} else {
-			game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: game.playersConnected})
-			game.playersConnected++
 		}
+		game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: game.playersConnected})
+		game.playersConnected++
 		defer func() {
-			conn.Close() //nolint:errcheck //we don't care at the end of the function if the connection errors when closing
+			conn.Close()
 		}()
 
 		for {

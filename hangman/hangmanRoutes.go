@@ -14,19 +14,21 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
+func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+) {
 	r.Handle("GET /hangman_game/", http.StripPrefix("/hangman_game/", http.FileServer(http.Dir("./build_hangman/"))))
 
-	r.HandleFunc("GET /hangman/new_game", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /hangman/new_game", func(w http.ResponseWriter, _ *http.Request) {
 		gState := newGameHangman()
 		var game interfaces.Game = gState
 		games[gState.gameID] = game
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"gameID":%q}`, gState.gameID) //nolint:errcheck
+		fmt.Fprintf(w, `{"gameID":%q}`, gState.gameID)
 	})
 
-	r.HandleFunc("GET /hangman/get_games", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprint(w, "0") //nolint:errcheck
+	r.HandleFunc("GET /hangman/get_games", func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "0")
 	})
 
 	r.HandleFunc("GET /hangman/valid/{playerHash}", func(w http.ResponseWriter, req *http.Request) {
@@ -35,30 +37,31 @@ func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocke
 			return
 		}
 		if playerHashes[hash] == nil {
-			fmt.Fprint(w, "-1") //nolint:errcheck
-		} else {
-			var gameID string
-			for i, g := range games {
-				if reflect.TypeOf(g) == reflect.TypeOf(&hangman{}) {
-					for _, p := range (g).(*hangman).Players() {
-						if p.PlayerID == hash {
-							gameID = i
-						}
+			fmt.Fprint(w, "-1")
+			return
+		}
+		var gameID string
+		for i, g := range games {
+			if reflect.TypeOf(g) == reflect.TypeFor[*hangman]() {
+				for _, p := range (g).(*hangman).Players() {
+					if p.PlayerID == hash {
+						gameID = i
 					}
 				}
 			}
-			fmt.Fprint(w, gameID) //nolint:errcheck
 		}
+		fmt.Fprint(w, gameID)
 	})
 
-	r.HandleFunc("GET /hangman/exit_game/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /hangman/exit_game/{playerHash}/{gameID}", func(_ http.ResponseWriter, req *http.Request) {
 		playerHash := req.PathValue("playerHash")
 		gameID := req.PathValue("gameID")
 		_player := playerHashes[playerHash]
 		if _player == nil || games[gameID] == nil {
 			return
 		}
-		playerIndex := slices.IndexFunc((games[gameID]).(*hangman).players, func(p *interfaces.Player) bool { return p.PlayerID == playerHash })
+		playerIndex := slices.IndexFunc((games[gameID]).(*hangman).players,
+			func(p *interfaces.Player) bool { return p.PlayerID == playerHash })
 
 		delete(playerHashes, playerHash)
 		inputChannel <- &exitGameInput{gameID, playerIndex}
@@ -82,7 +85,7 @@ func HangmanRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocke
 			if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"}); err != nil {
 				fmt.Println(err)
 			}
-			conn.Close() //nolint:errcheck
+			conn.Close()
 		}
 	})
 
@@ -107,7 +110,6 @@ func handleWebSocketHangman(
 	playerHashes map[string]*websocket.Conn,
 ) {
 	if gState, ok := gameObj.(*hangman); ok {
-
 		var playerIndex int
 		if reconnect {
 			conn2 := playerHashes[hash]
@@ -120,12 +122,11 @@ func handleWebSocketHangman(
 					if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "2"}); err != nil {
 						fmt.Println(err)
 					}
-					conn.Close() //nolint:errcheck
+					conn.Close()
 					return
 				}
 				playerHashes[hash] = conn
 			}
-
 		} else {
 			playerIndex = len(gState.players)
 			playerHash := IDGenerator.GenerateID(32)
@@ -155,9 +156,8 @@ func handleWebSocketHangman(
 			}); err != nil {
 				fmt.Println(err)
 			}
-
 		}
-		defer conn.Close() //nolint:errcheck //not our concern if the connection closing causes some error
+		defer conn.Close()
 		usernames := []string{}
 		for _, p := range gState.players {
 			usernames = append(usernames, p.Username)
@@ -195,8 +195,7 @@ func handleWebSocketHangman(
 			PlayerIndex := slices.IndexFunc(gState.players, func(p *interfaces.Player) bool {
 				return p.PlayerID == hash
 			})
-			switch messageType {
-			case websocket.TextMessage:
+			if messageType == websocket.TextMessage {
 				pString := string(p)
 				switch pString[:2] {
 				case "g:":
@@ -224,6 +223,5 @@ func handleWebSocketHangman(
 				}
 			}
 		}
-
 	}
 }

@@ -13,13 +13,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func TicTacToeRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input) {
-	r.HandleFunc("GET /tictactoe", func(w http.ResponseWriter, req *http.Request) {
+func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+) {
+	r.HandleFunc("GET /tictactoe", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_tictactoe.go.tmpl", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-	r.HandleFunc("GET /tictactoe/new_game", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /tictactoe/new_game", func(w http.ResponseWriter, _ *http.Request) {
 		gState, hash := NewGameTicTacToe()
 		var game interfaces.Game = gState
 		games[hash] = game
@@ -39,7 +41,7 @@ func TicTacToeRoutes(r *http.ServeMux, tmpl *template.Template, upgrader *websoc
 		}
 		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, playerHashes, gameID)
 	})
-	r.HandleFunc("GET /tictactoe/reconnect/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {})
+	r.HandleFunc("GET /tictactoe/reconnect/{playerHash}/{gameID}", func(_ http.ResponseWriter, _ *http.Request) {})
 	r.HandleFunc("GET /tictactoe/{gameID}", func(w http.ResponseWriter, req *http.Request) {
 		gameID := req.PathValue("gameID")
 		if gameID == "" {
@@ -62,8 +64,7 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 	if gState, ok := gameObj.(*ticTacToe); ok {
 		var playerIndex int
 
-		if reconnect {
-		} else {
+		if !reconnect {
 			if gState.playersSize > 1 {
 				return
 			}
@@ -72,9 +73,8 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 			newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex), PlayerID: hash}
 			playerIndex = gState.newPlayer(newPlayer)
 			playerHashes[hash] = conn
-
 		}
-		defer conn.Close() //nolint:errcheck //not our concern if the connection closing causes some error
+		defer conn.Close()
 
 		ui := &moveInput{gameID: gameID, playerIndex: playerIndex, team: playerIndex + 1}
 		for {

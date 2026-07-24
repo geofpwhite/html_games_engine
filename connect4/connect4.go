@@ -79,7 +79,7 @@ func newGameConnect4() (*connect4, string) {
 		turn:  BLUE,
 		mut:   &sync.RWMutex{},
 	}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		c4.field[i] = make([]int, 8)
 	}
 	hash := IDGenerator.GenerateID(6)
@@ -105,7 +105,7 @@ func (c4 *connect4) Clear() {
 	defer c4.mut.Unlock()
 	c4.field = make([][]int, 8)
 	c4.turn = BLUE
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		c4.field[i] = make([]int, 8)
 	}
 }
@@ -182,7 +182,8 @@ func (c4 *connect4) scanForConnect4() map[queueElement]bool {
 	for len(coordinateQueue) > 0 {
 		poppedElement := coordinateQueue[0]
 		coordinateQueue = coordinateQueue[1:]
-		if poppedElement.upStreak >= 3 || poppedElement.rightStreak >= 3 || poppedElement.rightUpStreak >= 3 || poppedElement.rightDownStreak >= 3 {
+		if poppedElement.upStreak >= 3 || poppedElement.rightStreak >= 3 ||
+			poppedElement.rightUpStreak >= 3 || poppedElement.rightDownStreak >= 3 {
 			winners[poppedElement] = true
 		}
 		// check 4 neighbors

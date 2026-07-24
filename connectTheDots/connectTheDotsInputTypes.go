@@ -12,9 +12,11 @@ type connectTheDotsAddEdgeInput struct {
 func (ctdaei *connectTheDotsAddEdgeInput) GameID() string {
 	return ctdaei.gameID
 }
+
 func (ctdaei *connectTheDotsAddEdgeInput) PlayerIndex() int {
 	return ctdaei.playerIndex
 }
+
 func (ctdaei *connectTheDotsAddEdgeInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*connectTheDots); ok {
 		gState.addEdge(ctdaei.coords, ctdaei.team)

@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func WhiteboardRoutes(
+func Routes(
 	r *http.ServeMux,
 	tmpl *template.Template,
 	upgrader *websocket.Upgrader,
@@ -21,7 +21,7 @@ func WhiteboardRoutes(
 	playerHashes map[string]*websocket.Conn,
 	inputChannel chan interfaces.Input,
 ) {
-	r.HandleFunc("GET /whiteboard", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("GET /whiteboard", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_whiteboard.go.tmpl", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -46,13 +46,12 @@ func WhiteboardRoutes(
 		}
 		gameObj, ok := games[gameID]
 		if !ok {
-			conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
+			conn.Close()
 			return
 		}
 		wb, ok := gameObj.(*whiteboard)
 		if !ok {
-			conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
-
+			conn.Close()
 			return
 		}
 
@@ -64,7 +63,7 @@ func WhiteboardRoutes(
 		if pngBytes, err := wb.encodedPNG(); err == nil {
 			err2 := conn.WriteJSON(whiteboardFull{Type: "full", Png: pngBytes})
 			if err2 != nil {
-				conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
+				conn.Close()
 				return
 			}
 		}
@@ -75,7 +74,7 @@ func WhiteboardRoutes(
 			PlayerIndex: len(wb.players),
 		})
 
-		defer conn.Close() //nolint:errcheck //We don't care right now if there are errors closing the connection. we are discarding it
+		defer conn.Close()
 
 		HandleWebSocketWhiteboard(conn, inputChannel, gameID)
 	})
@@ -91,9 +90,9 @@ func WhiteboardRoutes(
 	})
 }
 
-func queryInt(req *http.Request, key string, def, min, max int) int {
+func queryInt(req *http.Request, key string, def, minVal, maxVal int) int {
 	v, err := strconv.Atoi(req.URL.Query().Get(key))
-	if err != nil || v < min || v > max {
+	if err != nil || v < minVal || v > maxVal {
 		return def
 	}
 	return v
@@ -112,12 +111,10 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			continue
 		}
 		pString := string(p)
-		colonIdx := strings.Index(pString, ":")
-		if colonIdx == -1 {
+		msgType, msgData, ok := strings.Cut(pString, ":")
+		if !ok {
 			continue
 		}
-		msgType := pString[:colonIdx]
-		msgData := pString[colonIdx+1:]
 
 		switch msgType {
 		case "d":

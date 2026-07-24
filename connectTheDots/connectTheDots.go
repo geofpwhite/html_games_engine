@@ -5,13 +5,18 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 )
 
-const EMPTY, BLUE, RED, POINT = 0, 1, 2, 3
+const (
+	EMPTY = 0
+	BLUE  = 1
+	RED   = 2
+	POINT = 3
+)
 
 type connectTheDots struct {
-	size                int     //number of dots in a row
-	field               [][]int //
-	turn                int
-	players             []*interfaces.Player
+	size             int     // number of dots in a row
+	field            [][]int //
+	turn             int
+	players          []*interfaces.Player
 	playersConnected int
 }
 
@@ -75,7 +80,6 @@ func (ctd *connectTheDots) addEdge(coord [2]int, team int) {
 		if coord[1] < ctd.size+ctd.size-2 {
 			affectedCells = append(affectedCells, [2]int{coord[0], coord[1] + 1})
 		}
-
 	}
 	advanceTurn := true
 	for _, coords := range affectedCells {
@@ -101,12 +105,10 @@ func (ctd *connectTheDots) addEdge(coord [2]int, team int) {
 		}
 		ctd.field[coords[0]][coords[1]] = team
 		advanceTurn = false
-
 	}
 	if advanceTurn {
 		ctd.turn = (ctd.turn % 2) + 1
 	}
-
 }
 
 func (ctd *connectTheDots) JSON() interfaces.ClientState {

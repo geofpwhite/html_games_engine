@@ -419,7 +419,7 @@ func (a *accountsAPI) createGame(gameType string) (string, error) {
 		return "", fmt.Errorf("unknown game type %q", gameType)
 	}
 	rec := httptest.NewRecorder()
-	a.mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+	a.mux.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil))
 	if rec.Code != http.StatusOK {
 		return "", fmt.Errorf("new_game route for %q returned status %d", gameType, rec.Code)
 	}

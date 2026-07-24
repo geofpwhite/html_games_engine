@@ -267,6 +267,10 @@
       const pos = getPos(e);
       if (toolSelect.value === "draw") {
         sendDraw(pos.x, pos.y);
+        if (isHolding && prevHolding != {}) 
+          socket.send("l:" + pos.x + "-" + pos.y + "-" + prevHolding.x + "-" + prevHolding.y + "-" + hexColor() + "-" + brushSize());
+        isHolding = true
+        prevHolding=pos
       } else {
         drawPreview(startX, startY, pos.x, pos.y);
       }
@@ -276,6 +280,7 @@
       if (!isDrawing) return;
       isDrawing = false;
       isHolding = false;
+      prevHolding = {};
       const pos = getPos(e);
       if (toolSelect.value !== "draw") {
         pctx.clearRect(0, 0, preview.width, preview.height);

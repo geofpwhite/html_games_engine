@@ -98,6 +98,7 @@ func queryInt(req *http.Request, key string, def, minVal, maxVal int) int {
 	return v
 }
 
+//nolint:gocyclo // websocket message loop naturally branches on many message types; splitting would obscure the flow
 func HandleWebSocketWhiteboard(conn *websocket.Conn,
 	inputChannel chan interfaces.Input,
 	gameID string,

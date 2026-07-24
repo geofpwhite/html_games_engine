@@ -61,30 +61,32 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 	gameID string,
 ) {
 	var hash string
-	if gState, ok := gameObj.(*ticTacToe); ok {
-		var playerIndex int
+	gState, ok := gameObj.(*ticTacToe)
+	if !ok {
+		return
+	}
+	var playerIndex int
 
-		if !reconnect {
-			if gState.playersSize > 1 {
-				return
-			}
-			playerIndex = gState.playersSize
-			hash = IDGenerator.GenerateID(10)
-			newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex), PlayerID: hash}
-			playerIndex = gState.newPlayer(newPlayer)
-			playerHashes[hash] = conn
+	if !reconnect {
+		if gState.playersSize > 1 {
+			return
 		}
-		defer conn.Close()
+		playerIndex = gState.playersSize
+		hash = IDGenerator.GenerateID(10)
+		newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex), PlayerID: hash}
+		playerIndex = gState.newPlayer(newPlayer)
+		playerHashes[hash] = conn
+	}
+	defer conn.Close()
 
-		ui := &moveInput{gameID: gameID, playerIndex: playerIndex, team: playerIndex + 1}
-		for {
-			err := conn.ReadJSON(ui)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			fmt.Println(ui)
-			inputChannel <- ui
+	ui := &moveInput{gameID: gameID, playerIndex: playerIndex, team: playerIndex + 1}
+	for {
+		err := conn.ReadJSON(ui)
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
+		fmt.Println(ui)
+		inputChannel <- ui
 	}
 }

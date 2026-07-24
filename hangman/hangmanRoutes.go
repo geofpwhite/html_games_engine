@@ -109,61 +109,40 @@ func handleWebSocketHangman(
 	hash string,
 	playerHashes map[string]*websocket.Conn,
 ) {
-	if gState, ok := gameObj.(*hangman); ok {
-		var playerIndex int
-		if reconnect {
-			conn2 := playerHashes[hash]
-			if conn2 != nil {
-				if err := conn2.Close(); err != nil {
-					fmt.Println(err)
-				}
-				playerIndex = slices.IndexFunc(gState.players, func(p *interfaces.Player) bool { return p.PlayerID == hash })
-				if playerIndex == -1 {
-					if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "2"}); err != nil {
-						fmt.Println(err)
-					}
-					conn.Close()
-					return
-				}
-				playerHashes[hash] = conn
-			}
-		} else {
-			playerIndex = len(gState.players)
-			playerHash := IDGenerator.GenerateID(32)
-			hash = playerHash
-			newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex+1), PlayerID: playerHash}
-			gState.newPlayer(newPlayer)
-
-			playerHashes[playerHash] = conn
-			usernames := []string{}
-			for _, p := range gState.players {
-				usernames = append(usernames, p.Username)
-			}
-			if err := conn.WriteJSON(hangmanClientState{
-				Players:        usernames,
-				Turn:           gState.turn,
-				Host:           gState.curHostIndex,
-				RevealedWord:   gState.revealedWord,
-				GuessesLeft:    gState.guessesLeft,
-				LettersGuessed: gState.guessed,
-				NeedNewWord:    gState.needNewWord,
-				Warning:        "",
-				PlayerIndex:    playerIndex,
-				Winner:         gState.winner,
-				GameID:         gState.gameID,
-				ChatLogs:       gState.chatLogs,
-				Hash:           playerHash,
-			}); err != nil {
+	gState, ok := gameObj.(*hangman)
+	if !ok {
+		return
+	}
+	var playerIndex int
+	if reconnect { //nolint:nestif // It's gonna get a little messy
+		conn2 := playerHashes[hash]
+		if conn2 != nil {
+			if err := conn2.Close(); err != nil {
 				fmt.Println(err)
 			}
+			playerIndex = slices.IndexFunc(gState.players, func(p *interfaces.Player) bool { return p.PlayerID == hash })
+			if playerIndex == -1 {
+				if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "2"}); err != nil {
+					fmt.Println(err)
+				}
+				conn.Close()
+				return
+			}
+			playerHashes[hash] = conn
 		}
-		defer conn.Close()
+	} else {
+		playerIndex = len(gState.players)
+		playerHash := IDGenerator.GenerateID(32)
+		hash = playerHash
+		newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex+1), PlayerID: playerHash}
+		gState.newPlayer(newPlayer)
+
+		playerHashes[playerHash] = conn
 		usernames := []string{}
 		for _, p := range gState.players {
 			usernames = append(usernames, p.Username)
 		}
-
-		currentState := hangmanClientState{
+		if err := conn.WriteJSON(hangmanClientState{
 			Players:        usernames,
 			Turn:           gState.turn,
 			Host:           gState.curHostIndex,
@@ -176,51 +155,74 @@ func handleWebSocketHangman(
 			Winner:         gState.winner,
 			GameID:         gState.gameID,
 			ChatLogs:       gState.chatLogs,
+			Hash:           playerHash,
+		}); err != nil {
+			fmt.Println(err)
+		}
+	}
+	defer conn.Close()
+	usernames := []string{}
+	for _, p := range gState.players {
+		usernames = append(usernames, p.Username)
+	}
+
+	currentState := hangmanClientState{
+		Players:        usernames,
+		Turn:           gState.turn,
+		Host:           gState.curHostIndex,
+		RevealedWord:   gState.revealedWord,
+		GuessesLeft:    gState.guessesLeft,
+		LettersGuessed: gState.guessed,
+		NeedNewWord:    gState.needNewWord,
+		Warning:        "",
+		PlayerIndex:    playerIndex,
+		Winner:         gState.winner,
+		GameID:         gState.gameID,
+		ChatLogs:       gState.chatLogs,
+	}
+
+	for i, player := range gState.players {
+		currentState.PlayerIndex = i
+		if err := playerHashes[player.PlayerID].WriteJSON(currentState); err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			return
 		}
 
-		for i, player := range gState.players {
-			currentState.PlayerIndex = i
-			if err := playerHashes[player.PlayerID].WriteJSON(currentState); err != nil {
-				fmt.Println(err)
-			}
-		}
+		GameID := gState.gameID
+		PlayerIndex := slices.IndexFunc(gState.players, func(p *interfaces.Player) bool {
+			return p.PlayerID == hash
+		})
+		if messageType == websocket.TextMessage {
+			pString := string(p)
+			switch pString[:2] {
+			case "g:":
+				Guess := pString[2:]
+				inp := guessInput{gameID: GameID, playerIndex: PlayerIndex, guess: Guess}
+				inputChannel <- &inp
+			case "u:":
+				Username := pString[2:]
+				inp := usernameInput{gameID: GameID, playerIndex: PlayerIndex, username: Username}
+				inputChannel <- &inp
+			case "w:":
+				Word := pString[2:]
+				inp := newWordInput{gameID: GameID, playerIndex: PlayerIndex, newWord: Word}
+				inputChannel <- &inp
+			case "c:":
+				Chat := pString[2:]
+				inp := chatInput{gameID: GameID, playerIndex: PlayerIndex, message: Chat}
+				inputChannel <- &inp
+			case "r:":
+				inp := randomlyChooseWordInput{gameID: GameID, playerIndex: PlayerIndex}
+				inputChannel <- &inp
 
-		for {
-			messageType, p, err := conn.ReadMessage()
-			if err != nil {
-				return
-			}
-
-			GameID := gState.gameID
-			PlayerIndex := slices.IndexFunc(gState.players, func(p *interfaces.Player) bool {
-				return p.PlayerID == hash
-			})
-			if messageType == websocket.TextMessage {
-				pString := string(p)
-				switch pString[:2] {
-				case "g:":
-					Guess := pString[2:]
-					inp := guessInput{gameID: GameID, playerIndex: PlayerIndex, guess: Guess}
-					inputChannel <- &inp
-				case "u:":
-					Username := pString[2:]
-					inp := usernameInput{gameID: GameID, playerIndex: PlayerIndex, username: Username}
-					inputChannel <- &inp
-				case "w:":
-					Word := pString[2:]
-					inp := newWordInput{gameID: GameID, playerIndex: PlayerIndex, newWord: Word}
-					inputChannel <- &inp
-				case "c:":
-					Chat := pString[2:]
-					inp := chatInput{gameID: GameID, playerIndex: PlayerIndex, message: Chat}
-					inputChannel <- &inp
-				case "r:":
-					inp := randomlyChooseWordInput{gameID: GameID, playerIndex: PlayerIndex}
-					inputChannel <- &inp
-
-				default:
-					continue
-				}
+			default:
+				continue
 			}
 		}
 	}

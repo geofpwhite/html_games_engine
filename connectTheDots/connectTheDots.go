@@ -53,11 +53,11 @@ func (ctd *connectTheDots) addEdge(coord [2]int, team int) {
 	if coord[0] >= ctd.size*2 ||
 		coord[1] >= ctd.size*2 ||
 		coord[0] < 0 ||
-		coord[1] < 0 {
+		coord[1] < 0 { //nolint:gosec // coord is a fixed [2]int; index is a compile-time constant, always in bounds
 		println("out of bounds")
 		return
 	}
-	if coord[0]%2 == coord[1]%2 {
+	if coord[0]%2 == coord[1]%2 { //nolint:gosec // coord is a fixed [2]int; index is a compile-time constant, always in bounds
 		println("not an edge")
 		return
 	}
@@ -66,20 +66,17 @@ func (ctd *connectTheDots) addEdge(coord [2]int, team int) {
 		ctd.field[coord[0]][coord[1]] = team
 	}
 	affectedCells := [][2]int{}
+	appendIfValid := func(valid bool, cell [2]int) {
+		if valid {
+			affectedCells = append(affectedCells, cell)
+		}
+	}
 	if coord[0]%2 == 0 {
-		if coord[0] > 0 {
-			affectedCells = append(affectedCells, [2]int{coord[0] - 1, coord[1]})
-		}
-		if coord[0] < ctd.size+ctd.size-2 {
-			affectedCells = append(affectedCells, [2]int{coord[0] + 1, coord[1]})
-		}
+		appendIfValid(coord[0] > 0, [2]int{coord[0] - 1, coord[1]})
+		appendIfValid(coord[0] < ctd.size+ctd.size-2, [2]int{coord[0] + 1, coord[1]})
 	} else {
-		if coord[1] > 0 {
-			affectedCells = append(affectedCells, [2]int{coord[0], coord[1] - 1})
-		}
-		if coord[1] < ctd.size+ctd.size-2 {
-			affectedCells = append(affectedCells, [2]int{coord[0], coord[1] + 1})
-		}
+		appendIfValid(coord[1] > 0, [2]int{coord[0], coord[1] - 1})
+		appendIfValid(coord[1] < ctd.size+ctd.size-2, [2]int{coord[0], coord[1] + 1})
 	}
 	advanceTurn := true
 	for _, coords := range affectedCells {

@@ -193,8 +193,9 @@ func (c4 *connect4) scanForConnect4() map[queueElement]bool {
 		rightDown := [2]int{poppedElement.coordinate[0] - 1, poppedElement.coordinate[1] + 1}
 		possibleNeighborCoordinates := [][2]int{up, right, rightUp, rightDown}
 		for i, coord := range possibleNeighborCoordinates {
+			//nolint:gosec // coord is a fixed [2]int; bounds validated below before indexing c4.field
 			if coord[0] >= 0 && coord[0] < 8 && coord[1] >= 0 && coord[1] < 8 {
-				neighbor := queueElement{coordinate: coord, team: c4.field[coord[0]][coord[1]]}
+				neighbor := queueElement{coordinate: coord, team: c4.field[coord[0]][coord[1]]} //nolint:gosec // bounds checked above
 				if neighbor.team == poppedElement.team {
 					switch i {
 					case 0:

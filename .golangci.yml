@@ -23,6 +23,7 @@ linters:
     # consider putting these back, when they stop being bugged (ifshort, wastedassign,...)
     - paralleltest
     - thelper
+    - revive
     - forbidigo
     - wastedassign
     - cyclop

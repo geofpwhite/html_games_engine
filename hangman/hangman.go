@@ -136,17 +136,16 @@ func (gState *hangman) randomNewWord() {
 	}
 	defer x.Close()
 	result := ""
-	if x.Next() {
-		if err := x.Scan(&result); err != nil {
-			return
-		}
-		if result == "" {
-			return
-		}
-	} else {
+	if !x.Next() {
 		if err := x.Err(); err != nil {
 			return
 		}
+		return
+	}
+	if err := x.Scan(&result); err != nil {
+		return
+	}
+	if result == "" {
 		return
 	}
 	gState.currentWord = result
@@ -177,17 +176,16 @@ func (gState *hangman) newWord(word string) {
 	}
 	defer x.Close()
 	result := ""
-	if x.Next() {
-		if err := x.Scan(&result); err != nil {
-			return
-		}
-		if result == "" {
-			return
-		}
-	} else {
+	if !x.Next() {
 		if err := x.Err(); err != nil {
 			return
 		}
+		return
+	}
+	if err := x.Scan(&result); err != nil {
+		return
+	}
+	if result == "" {
 		return
 	}
 	gState.currentWord = word

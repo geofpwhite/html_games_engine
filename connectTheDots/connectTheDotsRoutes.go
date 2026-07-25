@@ -10,6 +10,7 @@ import (
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
+	"github.com/geofpwhite/html_games_engine/metrics"
 
 	"github.com/gorilla/websocket"
 )
@@ -36,6 +37,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		c4, hash := NewGameConnectTheDots(8)
 		var g interfaces.Game = c4
 		games[hash] = g
+		metrics.GamesPlayed.WithLabelValues("connectthedots").Inc()
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(hash); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -10,6 +10,7 @@ import (
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	"github.com/geofpwhite/html_games_engine/interfaces"
+	"github.com/geofpwhite/html_games_engine/metrics"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,6 +33,7 @@ func Routes(
 		height := queryInt(req, "h", 500, 100, 4000)
 		wb, hash := NewWhiteboard(width, height)
 		games[hash] = wb
+		metrics.GamesPlayed.WithLabelValues("whiteboard").Inc()
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(hash); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

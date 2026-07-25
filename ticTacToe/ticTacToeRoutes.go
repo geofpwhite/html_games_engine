@@ -9,6 +9,7 @@ import (
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
+	"github.com/geofpwhite/html_games_engine/metrics"
 
 	"github.com/gorilla/websocket"
 )
@@ -25,6 +26,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		gState, hash := NewGameTicTacToe()
 		var game interfaces.Game = gState
 		games[hash] = game
+		metrics.GamesPlayed.WithLabelValues("tictactoe").Inc()
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(struct {
 			GameID string `json:"gameID"`

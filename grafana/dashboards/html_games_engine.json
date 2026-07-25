@@ -1,0 +1,93 @@
+{
+  "title": "HTML Games Engine",
+  "uid": "html-games-engine",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Registered Users",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "datasource": "Prometheus", "expr": "html_games_registered_users", "legendFormat": "registered" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Online Users",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "datasource": "Prometheus", "expr": "html_games_online_users", "legendFormat": "online" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Games Played (Total)",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "datasource": "Prometheus", "expr": "sum(html_games_played_total)", "legendFormat": "games played" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Visits (Total)",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "datasource": "Prometheus", "expr": "sum(html_games_visits_total)", "legendFormat": "visits" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Users Over Time",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "datasource": "Prometheus", "expr": "html_games_registered_users", "legendFormat": "registered" },
+        { "datasource": "Prometheus", "expr": "html_games_online_users", "legendFormat": "online" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Games Played per Minute, by Game",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(html_games_played_total[5m])) by (game) * 60",
+          "legendFormat": "{{game}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Site Visits per Minute",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(html_games_visits_total[5m])) * 60",
+          "legendFormat": "visits/min"
+        }
+      ]
+    }
+  ]
+}

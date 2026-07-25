@@ -10,6 +10,7 @@ import (
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
+	"github.com/geofpwhite/html_games_engine/metrics"
 
 	"github.com/gorilla/websocket"
 )
@@ -23,6 +24,7 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 		gState := newGameHangman()
 		var game interfaces.Game = gState
 		games[gState.gameID] = game
+		metrics.GamesPlayed.WithLabelValues("hangman").Inc()
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"gameID":%q}`, gState.gameID)
 	})

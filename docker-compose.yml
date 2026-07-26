@@ -11,6 +11,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./accounts/sql/schema.sql:/docker-entrypoint-initdb.d/db_setup.sql
+      - ./accounts/sql/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
     restart: unless-stopped
 
   redis:

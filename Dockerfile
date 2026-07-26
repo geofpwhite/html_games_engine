@@ -26,6 +26,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 COPY --from=builder /app/words.db .
 COPY --from=builder /app/templates ./templates
+COPY --from=builder /app/geofpwhite.us.png .
 
 ENV DATABASE_URL=postgresql://app:app@db:5432/accounts?sslmode=disable
 ENV REDIS_ADDR=redis:6379

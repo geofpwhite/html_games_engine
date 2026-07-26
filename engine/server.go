@@ -69,6 +69,9 @@ func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game,
 	r.HandleFunc("GET /about", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "https://github.com/geofpwhite/html_games_engine", http.StatusMovedPermanently)
 	})
+	r.HandleFunc("GET /favicon.png", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "geofpwhite.us.png")
+	})
 
 	hangman.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
 	connect4.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)

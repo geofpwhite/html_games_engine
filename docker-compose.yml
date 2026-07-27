@@ -26,6 +26,7 @@ services:
 
   games-engine:
     image: ghcr.io/geofpwhite/html_games_engine:latest
+    container_name: games-engine
     restart: always
     environment:
       - DATABASE_URL=postgresql://app:app@db:5432/accounts?sslmode=disable
@@ -60,11 +61,34 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - prometheus
+      - loki
     ports:
       - "3000:3000"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
     restart: unless-stopped
 
 volumes:
   db-data:
   prometheus-data:
   grafana-data:
+  loki-data:

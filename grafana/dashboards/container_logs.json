@@ -1,0 +1,88 @@
+{
+  "title": "Container Logs",
+  "uid": "html-games-engine-logs",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "games-engine",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"games-engine\"}" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "db",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"db\"}" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "logs",
+      "title": "redis",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"redis\"}" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"prometheus\"}" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "grafana",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"grafana\"}" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "logs",
+      "title": "loki",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"loki\"}" }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "logs",
+      "title": "promtail",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": "Loki",
+      "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
+      "targets": [
+        { "datasource": "Loki", "expr": "{container=\"promtail\"}" }
+      ]
+    }
+  ]
+}

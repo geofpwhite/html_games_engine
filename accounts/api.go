@@ -15,13 +15,14 @@ import (
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 	"github.com/geofpwhite/html_games_engine/accounts/cache"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	"github.com/geofpwhite/html_games_engine/accounts/store"
 
 	"github.com/gorilla/websocket"
 )
 
 const (
-	sessionCookieName = "session_key"
+	sessionCookieName = gamesession.CookieName
 	sessionMaxAge     = 20 * time.Minute
 	cleanupInterval   = time.Minute
 )

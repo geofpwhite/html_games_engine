@@ -10,6 +10,7 @@ import (
 	accounts "github.com/geofpwhite/html_games_engine/accounts"
 	"github.com/geofpwhite/html_games_engine/accounts/cache"
 	"github.com/geofpwhite/html_games_engine/accounts/cache/rediscache"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	"github.com/geofpwhite/html_games_engine/accounts/store"
 	"github.com/geofpwhite/html_games_engine/accounts/store/pgstore"
 	connectthedots "github.com/geofpwhite/html_games_engine/connectTheDots"
@@ -73,14 +74,16 @@ func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game,
 		http.ServeFile(w, req, "geofpwhite.us.png")
 	})
 
-	hangman.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
-	connect4.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
-	connectthedots.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
-	tictactoe.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
-	whiteboard.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel)
-
 	userStore := pgstore.NewStore()
 	userCache := rediscache.NewCache()
+	sessions := gamesession.New(userStore, userCache)
+
+	hangman.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)
+	connect4.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)
+	connectthedots.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)
+	tictactoe.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)
+	whiteboard.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)
+
 	accounts.AccountRoutes(r, tmpl, &upgrader, userStore, userCache)
 
 	r.Handle("GET /metrics", metrics.Handler())

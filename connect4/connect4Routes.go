@@ -1,6 +1,7 @@
 package connect4
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -12,6 +13,7 @@ import (
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
 
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
@@ -20,6 +22,7 @@ import (
 
 func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /connect4", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_connect4.go.tmpl", nil); err != nil {
@@ -55,9 +58,14 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		}
 		game.players = append(game.players, &interfaces.Player{PlayerID: playerHash, GameID: gameID, PlayerIndex: game.playersConnected})
 		game.playersConnected++
-		defer func() {
+
+		sessionID, tracked := sessions.Start(req.Context(), req, "connect4")
+		defer func(ctx context.Context) {
 			conn.Close()
-		}()
+			if tracked {
+				sessions.End(ctx, sessionID)
+			}
+		}(req.Context())
 
 		for {
 			x, msg, err := conn.ReadMessage()

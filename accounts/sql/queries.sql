@@ -43,3 +43,18 @@ SELECT
     Username
 FROM
     Users;
+
+-- name: StartGameSession :one
+INSERT INTO
+    GameSessions (UserID, GameType)
+VALUES
+    ($1, $2)
+RETURNING
+    GameSessionID;
+
+-- name: EndGameSession :exec
+UPDATE GameSessions
+SET
+    EndTime = now()
+WHERE
+    GameSessionID = $1;

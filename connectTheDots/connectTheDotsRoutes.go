@@ -1,6 +1,7 @@
 package connectthedots
 
 import (
+	"context"
 	"encoding/json"
 	"html/template"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
@@ -17,6 +19,7 @@ import (
 
 func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /connect-the-dots", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_connectTheDots.go.tmpl", nil); err != nil {
@@ -66,7 +69,14 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		default:
 			return
 		}
-		defer conn.Close()
+
+		sessionID, tracked := sessions.Start(req.Context(), req, "connectthedots")
+		defer func(ctx context.Context) {
+			conn.Close()
+			if tracked {
+				sessions.End(ctx, sessionID)
+			}
+		}(req.Context())
 
 		HandleWebSocketConnectTheDots(conn, inputChannel, gameObj.(*connectTheDots), false, playerHash, playerHashes, gameID)
 	})

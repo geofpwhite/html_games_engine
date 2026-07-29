@@ -25,4 +25,9 @@ type Store interface {
 	DeleteUser(ctx context.Context, userID int32) error
 	// GetUsernames retrieves all usernames.
 	GetUsernames(ctx context.Context) ([]string, error)
+	// StartGameSession records that a user has started playing a game of the given type,
+	// returning the new session's ID.
+	StartGameSession(ctx context.Context, userID int32, gameType string) (int32, error)
+	// EndGameSession records that a game session has ended.
+	EndGameSession(ctx context.Context, sessionID int32) error
 }

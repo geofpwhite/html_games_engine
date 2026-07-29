@@ -5,8 +5,64 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Gametype string
+
+const (
+	GametypeConnect4       Gametype = "connect4"
+	GametypeConnectthedots Gametype = "connectthedots"
+	GametypeTictactoe      Gametype = "tictactoe"
+	GametypeHangman        Gametype = "hangman"
+	GametypeWhiteboard     Gametype = "whiteboard"
+)
+
+func (e *Gametype) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Gametype(s)
+	case string:
+		*e = Gametype(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Gametype: %T", src)
+	}
+	return nil
+}
+
+type NullGametype struct {
+	Gametype Gametype
+	Valid    bool // Valid is true if Gametype is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGametype) Scan(value interface{}) error {
+	if value == nil {
+		ns.Gametype, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Gametype.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGametype) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Gametype), nil
+}
+
+type Gamesession struct {
+	Gamesessionid int32
+	Userid        int32
+	Gametype      Gametype
+	Starttime     pgtype.Timestamptz
+	Endtime       pgtype.Timestamptz
+}
 
 type User struct {
 	Userid    int32

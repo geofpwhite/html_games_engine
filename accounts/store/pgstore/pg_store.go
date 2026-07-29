@@ -93,3 +93,17 @@ func (s *postgresStore) DeleteUser(ctx context.Context, userID int32) error {
 func (s *postgresStore) GetUsernames(ctx context.Context) ([]string, error) {
 	return s.queries.GetUsernames(ctx)
 }
+
+// StartGameSession records that a user has started playing a game of the given type,
+// returning the new session's ID.
+func (s *postgresStore) StartGameSession(ctx context.Context, userID int32, gameType string) (int32, error) {
+	return s.queries.StartGameSession(ctx, db.StartGameSessionParams{
+		Userid:   userID,
+		Gametype: db.Gametype(gameType),
+	})
+}
+
+// EndGameSession records that a game session has ended.
+func (s *postgresStore) EndGameSession(ctx context.Context, sessionID int32) error {
+	return s.queries.EndGameSession(ctx, sessionID)
+}

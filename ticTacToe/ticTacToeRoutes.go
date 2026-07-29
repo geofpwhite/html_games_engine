@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
@@ -16,6 +17,7 @@ import (
 
 func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /tictactoe", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_tictactoe.go.tmpl", nil); err != nil {
@@ -41,7 +43,11 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		if err != nil || gameID == "" {
 			return
 		}
+		sessionID, tracked := sessions.Start(req.Context(), req, "tictactoe")
 		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, playerHashes, gameID)
+		if tracked {
+			sessions.End(req.Context(), sessionID)
+		}
 	})
 	r.HandleFunc("GET /tictactoe/reconnect/{playerHash}/{gameID}", func(_ http.ResponseWriter, _ *http.Request) {})
 	r.HandleFunc("GET /tictactoe/{gameID}", func(w http.ResponseWriter, req *http.Request) {

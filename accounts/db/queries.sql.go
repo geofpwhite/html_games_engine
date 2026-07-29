@@ -41,6 +41,19 @@ func (q *Queries) DeleteUser(ctx context.Context, userid int32) error {
 	return err
 }
 
+const endGameSession = `-- name: EndGameSession :exec
+UPDATE GameSessions
+SET
+    EndTime = now()
+WHERE
+    GameSessionID = $1
+`
+
+func (q *Queries) EndGameSession(ctx context.Context, gamesessionid int32) error {
+	_, err := q.db.Exec(ctx, endGameSession, gamesessionid)
+	return err
+}
+
 const getUser = `-- name: GetUser :one
 SELECT
     UserID,
@@ -114,6 +127,27 @@ func (q *Queries) GetUsernames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const startGameSession = `-- name: StartGameSession :one
+INSERT INTO
+    GameSessions (UserID, GameType)
+VALUES
+    ($1, $2)
+RETURNING
+    GameSessionID
+`
+
+type StartGameSessionParams struct {
+	Userid   int32
+	Gametype Gametype
+}
+
+func (q *Queries) StartGameSession(ctx context.Context, arg StartGameSessionParams) (int32, error) {
+	row := q.db.QueryRow(ctx, startGameSession, arg.Userid, arg.Gametype)
+	var gamesessionid int32
+	err := row.Scan(&gamesessionid)
+	return gamesessionid, err
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :exec

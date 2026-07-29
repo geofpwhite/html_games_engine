@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
@@ -17,6 +18,7 @@ import (
 
 func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	sessions *gamesession.Tracker,
 ) {
 	r.Handle("GET /hangman_game/", http.StripPrefix("/hangman_game/", http.FileServer(http.Dir("./build_hangman/"))))
 
@@ -82,7 +84,11 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 		}
 
 		if games[gameID] != nil {
+			sessionID, tracked := sessions.Start(req.Context(), req, "hangman")
 			handleWebSocketHangman(conn, inputChannel, games[gameID], true, playerHash, playerHashes)
+			if tracked {
+				sessions.End(req.Context(), sessionID)
+			}
 		} else {
 			if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"}); err != nil {
 				fmt.Println(err)
@@ -99,7 +105,11 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 		}
 		fmt.Println(games[gameID])
 		fmt.Println(gameID)
+		sessionID, tracked := sessions.Start(req.Context(), req, "hangman")
 		handleWebSocketHangman(conn, inputChannel, games[gameID], false, "", playerHashes)
+		if tracked {
+			sessions.End(req.Context(), sessionID)
+		}
 	})
 }
 

@@ -1,6 +1,7 @@
 package whiteboard
 
 import (
+	"context"
 	"encoding/json"
 	"html/template"
 	"image/color"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	IDGenerator "github.com/geofpwhite/html_games_engine/IDGenerator"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	"github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 	"github.com/gorilla/websocket"
@@ -21,6 +23,7 @@ func Routes(
 	games map[string]interfaces.Game,
 	playerHashes map[string]*websocket.Conn,
 	inputChannel chan interfaces.Input,
+	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /whiteboard", func(w http.ResponseWriter, _ *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, "home_screen_whiteboard.go.tmpl", nil); err != nil {
@@ -76,7 +79,13 @@ func Routes(
 			PlayerIndex: len(wb.players),
 		})
 
-		defer conn.Close()
+		sessionID, tracked := sessions.Start(req.Context(), req, "whiteboard")
+		defer func(ctx context.Context) {
+			conn.Close()
+			if tracked {
+				sessions.End(ctx, sessionID)
+			}
+		}(req.Context())
 
 		HandleWebSocketWhiteboard(conn, inputChannel, gameID)
 	})

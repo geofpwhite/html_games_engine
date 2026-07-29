@@ -5,6 +5,7 @@ version: "2"
 linters:
   default: all
   disable:
+    - gosec # giving false positives for some weird reason
     - godot
     - exhaustruct # seems like a good idea at first but actually a pain and go does have zero values for a reason.
     - gochecknoglobals

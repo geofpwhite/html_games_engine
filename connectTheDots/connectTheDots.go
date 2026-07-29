@@ -53,11 +53,11 @@ func (ctd *connectTheDots) addEdge(coord [2]int, team int) {
 	if coord[0] >= ctd.size*2 ||
 		coord[1] >= ctd.size*2 ||
 		coord[0] < 0 ||
-		coord[1] < 0 { //nolint:gosec // coord is a fixed [2]int; index is a compile-time constant, always in bounds
+		coord[1] < 0 {
 		println("out of bounds")
 		return
 	}
-	if coord[0]%2 == coord[1]%2 { //nolint:gosec // coord is a fixed [2]int; index is a compile-time constant, always in bounds
+	if coord[0]%2 == coord[1]%2 {
 		println("not an edge")
 		return
 	}

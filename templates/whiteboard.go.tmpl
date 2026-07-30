@@ -261,7 +261,7 @@
       if (toolSelect.value === "draw") {
         sendDraw(pos.x, pos.y);
         if (isHolding && prevHolding != {}) 
-          socket.send("l:" + pos.x + "-" + pos.y + "-" + prevHolding.x + "-" + prevHolding.y + "-" + hexColor() + "-" + brushSize());
+          socket.send("l:" + pos.x + "-" + pos.y + "-" + prevHolding.x + "-" + prevHolding.y + "-" + hexColor() + "-" + math.Max(1,brushSize()));
         isHolding = true
         prevHolding=pos
       }
@@ -273,7 +273,7 @@
       if (toolSelect.value === "draw") {
         sendDraw(pos.x, pos.y);
         if (isHolding && prevHolding != {} && distance(pos.x,pos.y,prevHolding.x,prevHolding.y) > brushSize()) 
-          socket.send("l:" + pos.x + "-" + pos.y + "-" + prevHolding.x + "-" + prevHolding.y + "-" + hexColor() + "-" + brushSize());
+          socket.send("l:" + pos.x + "-" + pos.y + "-" + prevHolding.x + "-" + prevHolding.y + "-" + hexColor() + "-" + math.Max(1,brushSize()));
         isHolding = true
         prevHolding=pos
       } else {

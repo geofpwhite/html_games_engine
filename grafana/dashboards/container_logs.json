@@ -11,7 +11,7 @@
       "id": 1,
       "type": "logs",
       "title": "games-engine",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [
@@ -22,7 +22,7 @@
       "id": 2,
       "type": "logs",
       "title": "db",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [
@@ -33,7 +33,7 @@
       "id": 3,
       "type": "logs",
       "title": "redis",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [
@@ -44,7 +44,7 @@
       "id": 4,
       "type": "logs",
       "title": "prometheus",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [
@@ -55,7 +55,7 @@
       "id": 5,
       "type": "logs",
       "title": "grafana",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [
@@ -66,7 +66,7 @@
       "id": 6,
       "type": "logs",
       "title": "loki",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [
@@ -77,7 +77,7 @@
       "id": 7,
       "type": "logs",
       "title": "promtail",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 48 },
       "datasource": "Loki",
       "options": { "showTime": true, "wrapLogMessages": true, "sortOrder": "Descending" },
       "targets": [

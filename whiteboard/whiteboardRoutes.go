@@ -13,6 +13,7 @@ import (
 	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	"github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
+	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
 )
 
@@ -22,7 +23,7 @@ func Routes(
 	upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game,
 	playerHashes map[string]*websocket.Conn,
-	inputChannel chan interfaces.Input,
+	inputChannel *pq.PriorityChannel[interfaces.Input],
 	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /whiteboard", func(w http.ResponseWriter, _ *http.Request) {
@@ -111,7 +112,7 @@ func queryInt(req *http.Request, key string, def, minVal, maxVal int) int {
 
 //nolint:gocyclo // websocket message loop naturally branches on many message types; splitting would obscure the flow
 func HandleWebSocketWhiteboard(conn *websocket.Conn,
-	inputChannel chan interfaces.Input,
+	inputChannel *pq.PriorityChannel[interfaces.Input],
 	gameID string,
 ) {
 	for {
@@ -141,10 +142,12 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if errX != nil || errY != nil || errR != nil {
 				continue
 			}
-			inputChannel <- &drawInput{x: x, y: y, gameID: gameID, color: clr, radius: radius}
+			di := &drawInput{x: x, y: y, gameID: gameID, color: clr, radius: radius}
+			inputChannel.Push(di, di.Priority())
 
 		case "c":
-			inputChannel <- &clearInput{gameID: gameID}
+			ci := &clearInput{gameID: gameID}
+			inputChannel.Push(ci, ci.Priority())
 
 		case "l":
 			// l:x1-y1-x2-y2-color-thickness
@@ -161,7 +164,8 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil {
 				continue
 			}
-			inputChannel <- &lineInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2}
+			li := &lineInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2}
+			inputChannel.Push(li, li.Priority())
 
 		case "r":
 			// r:x1-y1-x2-y2-color-thickness-theta
@@ -179,7 +183,8 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil || e6 != nil {
 				continue
 			}
-			inputChannel <- &rectInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2, thetaDeg: theta}
+			ri := &rectInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2, thetaDeg: theta}
+			inputChannel.Push(ri, ri.Priority())
 
 		case "ci":
 			// ci:x-y-radius-color-filled
@@ -195,7 +200,8 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 			if e1 != nil || e2 != nil || e3 != nil {
 				continue
 			}
-			inputChannel <- &circleInput{gameID: gameID, x: x, y: y, radius: radius, clr: clr, filled: filled}
+			cii := &circleInput{gameID: gameID, x: x, y: y, radius: radius, clr: clr, filled: filled}
+			inputChannel.Push(cii, cii.Priority())
 		}
 	}
 }

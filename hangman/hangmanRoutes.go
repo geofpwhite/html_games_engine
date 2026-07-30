@@ -13,11 +13,12 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
+	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
 )
 
 func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader,
-	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel *pq.PriorityChannel[interfaces.Input],
 	sessions *gamesession.Tracker,
 ) {
 	r.Handle("GET /hangman_game/", http.StripPrefix("/hangman_game/", http.FileServer(http.Dir("./build_hangman/"))))
@@ -68,7 +69,8 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 			func(p *interfaces.Player) bool { return p.PlayerID == playerHash })
 
 		delete(playerHashes, playerHash)
-		inputChannel <- &exitGameInput{gameID, playerIndex}
+		egi := &exitGameInput{gameID, playerIndex}
+		inputChannel.Push(egi, egi.Priority())
 	})
 
 	r.HandleFunc("GET /hangman/reconnect/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {
@@ -115,7 +117,7 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 
 func handleWebSocketHangman(
 	conn *websocket.Conn,
-	inputChannel chan interfaces.Input,
+	inputChannel *pq.PriorityChannel[interfaces.Input],
 	gameObj interfaces.Game,
 	reconnect bool,
 	hash string,
@@ -215,23 +217,23 @@ func handleWebSocketHangman(
 			switch pString[:2] {
 			case "g:":
 				Guess := pString[2:]
-				inp := guessInput{gameID: GameID, playerIndex: PlayerIndex, guess: Guess}
-				inputChannel <- &inp
+				inp := &guessInput{gameID: GameID, playerIndex: PlayerIndex, guess: Guess}
+				inputChannel.Push(inp, inp.Priority())
 			case "u:":
 				Username := pString[2:]
-				inp := usernameInput{gameID: GameID, playerIndex: PlayerIndex, username: Username}
-				inputChannel <- &inp
+				inp := &usernameInput{gameID: GameID, playerIndex: PlayerIndex, username: Username}
+				inputChannel.Push(inp, inp.Priority())
 			case "w:":
 				Word := pString[2:]
-				inp := newWordInput{gameID: GameID, playerIndex: PlayerIndex, newWord: Word}
-				inputChannel <- &inp
+				inp := &newWordInput{gameID: GameID, playerIndex: PlayerIndex, newWord: Word}
+				inputChannel.Push(inp, inp.Priority())
 			case "c:":
 				Chat := pString[2:]
-				inp := chatInput{gameID: GameID, playerIndex: PlayerIndex, message: Chat}
-				inputChannel <- &inp
+				inp := &chatInput{gameID: GameID, playerIndex: PlayerIndex, message: Chat}
+				inputChannel.Push(inp, inp.Priority())
 			case "r:":
-				inp := randomlyChooseWordInput{gameID: GameID, playerIndex: PlayerIndex}
-				inputChannel <- &inp
+				inp := &randomlyChooseWordInput{gameID: GameID, playerIndex: PlayerIndex}
+				inputChannel.Push(inp, inp.Priority())
 
 			default:
 				continue

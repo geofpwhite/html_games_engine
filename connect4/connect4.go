@@ -42,6 +42,10 @@ func (c4i *connect4InsertInput) PlayerIndex() int {
 	return c4i.playerIndex
 }
 
+func (c4i *connect4InsertInput) Priority() int {
+	return interfaces.PriorityNormal
+}
+
 func (c4i *connect4RotateInput) ChangeState(gameObj interfaces.Game) {
 	c4 := (gameObj).(*connect4)
 	c4.Rotate()
@@ -57,6 +61,10 @@ func (c4i *connect4RotateInput) GameID() string {
 
 func (c4i *connect4RotateInput) PlayerIndex() int {
 	return c4i.playerIndex
+}
+
+func (c4i *connect4RotateInput) Priority() int {
+	return interfaces.PriorityNormal
 }
 
 // -------------------------//

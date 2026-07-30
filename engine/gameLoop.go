@@ -5,9 +5,10 @@ import (
 	"time"
 
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
+	"github.com/geofpwhite/pq"
 )
 
-func GameLoop(inputChannel <-chan interfaces.Input, outputChannel chan<- string, games map[string]interfaces.Game) {
+func GameLoop(inputChannel *pq.PriorityChannel[interfaces.Input], outputChannel *pq.PriorityChannel[string], games map[string]interfaces.Game) {
 	lastModified := map[interfaces.Game]time.Time{}
 	var mu sync.Mutex
 	cleanupFunction := func() {
@@ -28,7 +29,8 @@ func GameLoop(inputChannel <-chan interfaces.Input, outputChannel chan<- string,
 		}
 	}
 	go cleanupFunction()
-	for userInput := range inputChannel {
+	for {
+		userInput, priority := inputChannel.PopBlocking()
 		mu.Lock() // noop unless we are cleaning up
 		gameID := userInput.GameID()
 		game, ok := games[gameID]
@@ -38,7 +40,7 @@ func GameLoop(inputChannel <-chan interfaces.Input, outputChannel chan<- string,
 		}
 		userInput.ChangeState(game)
 		lastModified[game] = time.Now()
-		outputChannel <- gameID
+		outputChannel.Push(gameID, priority)
 		mu.Unlock()
 	}
 }

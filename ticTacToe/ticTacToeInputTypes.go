@@ -18,6 +18,10 @@ func (mi *moveInput) PlayerIndex() int {
 	return mi.playerIndex
 }
 
+func (mi *moveInput) Priority() int {
+	return interfaces.PriorityNormal
+}
+
 func (mi *moveInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*ticTacToe); ok {
 		gState.move(mi.X, mi.Y, mi.team)

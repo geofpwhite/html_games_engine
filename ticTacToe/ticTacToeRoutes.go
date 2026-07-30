@@ -12,11 +12,12 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
+	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
 )
 
 func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
-	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel *pq.PriorityChannel[interfaces.Input],
 	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /tictactoe", func(w http.ResponseWriter, _ *http.Request) {
@@ -62,7 +63,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 }
 
 func handleWebSocketTicTacToe(conn *websocket.Conn,
-	inputChannel chan<- interfaces.Input,
+	inputChannel *pq.PriorityChannel[interfaces.Input],
 	gameObj interfaces.Game,
 	reconnect bool,
 	playerHashes map[string]*websocket.Conn,
@@ -95,6 +96,6 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 			return
 		}
 		fmt.Println(ui)
-		inputChannel <- ui
+		inputChannel.Push(ui, ui.Priority())
 	}
 }

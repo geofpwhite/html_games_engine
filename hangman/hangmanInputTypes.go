@@ -39,6 +39,8 @@ func (ui *usernameInput) PlayerIndex() int {
 	return ui.playerIndex
 }
 
+func (ui *usernameInput) Priority() int { return interfaces.PriorityNormal }
+
 func (ui *usernameInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := (gameObj).(*hangman); ok {
 		gState.changeUsername(ui.playerIndex, ui.username)
@@ -52,6 +54,8 @@ func (nwi *newWordInput) GameID() string {
 func (nwi *newWordInput) PlayerIndex() int {
 	return nwi.playerIndex
 }
+
+func (nwi *newWordInput) Priority() int { return interfaces.PriorityNormal }
 
 func (nwi *newWordInput) ChangeState(gameObj interfaces.Game) {
 	gState, ok := gameObj.(*hangman)
@@ -68,6 +72,8 @@ func (gi *guessInput) PlayerIndex() int {
 	return gi.playerIndex
 }
 
+func (gi *guessInput) Priority() int { return interfaces.PriorityNormal }
+
 func (gi *guessInput) ChangeState(gameObj interfaces.Game) {
 	gState, ok := gameObj.(*hangman)
 	if ok && gi.playerIndex == gState.turn {
@@ -83,6 +89,8 @@ func (ci *chatInput) PlayerIndex() int {
 	return ci.playerIndex
 }
 
+func (ci *chatInput) Priority() int { return interfaces.PriorityNormal }
+
 func (ci *chatInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*hangman); ok {
 		gState.chat(ci.message, ci.playerIndex)
@@ -97,6 +105,8 @@ func (rcwi *randomlyChooseWordInput) PlayerIndex() int {
 	return rcwi.playerIndex
 }
 
+func (rcwi *randomlyChooseWordInput) Priority() int { return interfaces.PriorityNormal }
+
 func (rcwi *randomlyChooseWordInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*hangman); ok {
 		gState.randomNewWord()
@@ -110,6 +120,8 @@ func (egi *exitGameInput) GameID() string {
 func (egi *exitGameInput) PlayerIndex() int {
 	return egi.playerIndex
 }
+
+func (egi *exitGameInput) Priority() int { return interfaces.PriorityClose }
 
 func (egi *exitGameInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*hangman); ok {

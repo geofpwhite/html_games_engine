@@ -17,6 +17,10 @@ func (ctdaei *connectTheDotsAddEdgeInput) PlayerIndex() int {
 	return ctdaei.playerIndex
 }
 
+func (ctdaei *connectTheDotsAddEdgeInput) Priority() int {
+	return interfaces.PriorityNormal
+}
+
 func (ctdaei *connectTheDotsAddEdgeInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*connectTheDots); ok {
 		gState.addEdge(ctdaei.coords, ctdaei.team)

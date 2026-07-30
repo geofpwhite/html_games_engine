@@ -22,6 +22,7 @@ import (
 	hangman "github.com/geofpwhite/html_games_engine/hangman"
 	whiteboard "github.com/geofpwhite/html_games_engine/whiteboard"
 
+	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
 )
 
@@ -52,7 +53,7 @@ func mod(a, b int) int {
 	return a % b
 }
 
-func Serve(inputChannel chan interfaces.Input, games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn) {
+func Serve(inputChannel *pq.PriorityChannel[interfaces.Input], games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,

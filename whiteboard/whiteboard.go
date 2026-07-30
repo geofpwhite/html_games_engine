@@ -34,6 +34,7 @@ type drawInput struct {
 
 func (di *drawInput) GameID() string   { return di.gameID }
 func (di *drawInput) PlayerIndex() int { return -1 }
+func (di *drawInput) Priority() int    { return interfaces.PriorityNormal }
 func (di *drawInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		bounds := gState.img.Bounds()
@@ -58,6 +59,7 @@ type clearInput struct {
 
 func (ci *clearInput) GameID() string   { return ci.gameID }
 func (ci *clearInput) PlayerIndex() int { return -1 }
+func (ci *clearInput) Priority() int    { return interfaces.PriorityNormal }
 func (ci *clearInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		fillWhite(&gState.img)
@@ -74,6 +76,7 @@ type lineInput struct {
 
 func (li *lineInput) GameID() string   { return li.gameID }
 func (li *lineInput) PlayerIndex() int { return -1 }
+func (li *lineInput) Priority() int    { return interfaces.PriorityNormal }
 func (li *lineInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		paint.DrawLine(&gState.img,
@@ -98,6 +101,7 @@ type rectInput struct {
 
 func (ri *rectInput) GameID() string   { return ri.gameID }
 func (ri *rectInput) PlayerIndex() int { return -1 }
+func (ri *rectInput) Priority() int    { return interfaces.PriorityNormal }
 func (ri *rectInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		if ri.thetaDeg != 0 {
@@ -141,6 +145,7 @@ type circleInput struct {
 
 func (ci *circleInput) GameID() string   { return ci.gameID }
 func (ci *circleInput) PlayerIndex() int { return -1 }
+func (ci *circleInput) Priority() int    { return interfaces.PriorityNormal }
 func (ci *circleInput) ChangeState(gameObj interfaces.Game) {
 	if gState, ok := gameObj.(*whiteboard); ok {
 		center := paint.Coords{X: ci.x, Y: ci.y}

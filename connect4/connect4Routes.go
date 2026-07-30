@@ -17,11 +17,12 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
+	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
 )
 
 func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
-	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel *pq.PriorityChannel[interfaces.Input],
 	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /connect4", func(w http.ResponseWriter, _ *http.Request) {
@@ -75,14 +76,14 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 			if x == websocket.TextMessage {
 				switch string(msg) {
 				case "r":
-					c4i := connect4RotateInput{gameID: gameID, playerIndex: -1}
-					inputChannel <- &c4i
+					c4i := &connect4RotateInput{gameID: gameID, playerIndex: -1}
+					inputChannel.Push(c4i, c4i.Priority())
 				default:
 					msgStrings := strings.Split(string(msg), ",")
 					team, _ := strconv.Atoi(msgStrings[0])
 					column, _ := strconv.Atoi(msgStrings[1])
-					c4i := connect4InsertInput{gameID: gameID, team: team, column: column}
-					inputChannel <- &c4i
+					c4i := &connect4InsertInput{gameID: gameID, team: team, column: column}
+					inputChannel.Push(c4i, c4i.Priority())
 				}
 			} else {
 				obj := make(map[string]any)

@@ -14,11 +14,12 @@ import (
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
 
+	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
 )
 
 func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
-	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel chan interfaces.Input,
+	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel *pq.PriorityChannel[interfaces.Input],
 	sessions *gamesession.Tracker,
 ) {
 	r.HandleFunc("GET /connect-the-dots", func(w http.ResponseWriter, _ *http.Request) {
@@ -96,7 +97,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 }
 
 func HandleWebSocketConnectTheDots(conn *websocket.Conn,
-	inputChannel chan interfaces.Input,
+	inputChannel *pq.PriorityChannel[interfaces.Input],
 	game *connectTheDots,
 	_ bool,
 	hash string,
@@ -126,7 +127,7 @@ func HandleWebSocketConnectTheDots(conn *websocket.Conn,
 					coords:      coords,
 					gameID:      gameID,
 				}
-				inputChannel <- ctdaei
+				inputChannel.Push(ctdaei, ctdaei.Priority())
 
 			default:
 				continue

@@ -53,7 +53,11 @@ func mod(a, b int) int {
 	return a % b
 }
 
-func Serve(inputChannel *pq.PriorityChannel[interfaces.Input], games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn) {
+func Serve(
+	inputChannel *pq.PriorityChannel[interfaces.Input],
+	games map[string]interfaces.Game,
+	playerHashes map[string]*websocket.Conn,
+) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,

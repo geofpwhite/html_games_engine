@@ -7,7 +7,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func OutputLoop(outputChannel *pq.PriorityChannel[string], games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn) {
+func OutputLoop(outputChannel *pq.PriorityChannel[string],
+	games map[string]interfaces.Game,
+	playerHashes map[string]*websocket.Conn,
+) {
 	var game interfaces.Game
 	var json interfaces.ClientState
 	var conn *websocket.Conn

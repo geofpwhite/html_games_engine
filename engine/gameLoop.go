@@ -8,7 +8,11 @@ import (
 	"github.com/geofpwhite/pq"
 )
 
-func GameLoop(inputChannel *pq.PriorityChannel[interfaces.Input], outputChannel *pq.PriorityChannel[string], games map[string]interfaces.Game) {
+func GameLoop(
+	inputChannel *pq.PriorityChannel[interfaces.Input],
+	outputChannel *pq.PriorityChannel[string],
+	games map[string]interfaces.Game,
+) {
 	lastModified := map[interfaces.Game]time.Time{}
 	var mu sync.Mutex
 	cleanupFunction := func() {

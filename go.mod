@@ -3,14 +3,18 @@ module github.com/geofpwhite/html_games_engine
 go 1.25.0
 
 require (
+	connectrpc.com/connect v1.20.0
 	github.com/geofpwhite/paint v0.1.3
-	github.com/geofpwhite/pq v0.1.6
+	github.com/geofpwhite/pq v0.2.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/prometheus/client_golang v1.24.1
 	github.com/redis/go-redis/v9 v9.21.0
 	golang.org/x/crypto v0.54.0
-	modernc.org/sqlite v1.54.0
+	golang.org/x/net v0.57.0
+	golang.org/x/time v0.15.0
+	google.golang.org/protobuf v1.36.11
+	modernc.org/sqlite v1.55.0
 )
 
 require (
@@ -34,8 +38,7 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
-	modernc.org/libc v1.74.3 // indirect
+	modernc.org/libc v1.74.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )

@@ -20,10 +20,14 @@ import (
 
 	connect4 "github.com/geofpwhite/html_games_engine/connect4"
 	hangman "github.com/geofpwhite/html_games_engine/hangman"
+	"github.com/geofpwhite/html_games_engine/pong"
+	"github.com/geofpwhite/html_games_engine/pong/pongv1/pongv1connect"
 	whiteboard "github.com/geofpwhite/html_games_engine/whiteboard"
 
 	"github.com/geofpwhite/pq"
 	"github.com/gorilla/websocket"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 // userCounts adapts the existing store/cache methods to metrics.UserCounts
@@ -91,12 +95,22 @@ func Serve(
 
 	accounts.AccountRoutes(r, tmpl, &upgrader, userStore, userCache)
 
+	pongService := pong.NewService()
+	pong.Routes(r, tmpl, pongService)
+	pongPath, pongHandler := pongv1connect.NewPongServiceHandler(pongService)
+	r.Handle(pongPath, pongHandler)
+	r.Handle("GET /pong_static/", http.StripPrefix("/pong_static/", http.FileServer(http.Dir("./pong/web/src/"))))
+
 	r.Handle("GET /metrics", metrics.Handler())
 	go metrics.PollUserCounts(context.Background(), userCounts{store: userStore, cache: userCache}, 30*time.Second)
 
+	limiter := newRateLimiter(1, 20)
+	// h2c lets gRPC clients speak HTTP/2 to the pong service in cleartext;
+	// it falls through to plain HTTP/1.1 (websockets included) for everything else.
+	handler := h2c.NewHandler(limiter.middleware(metrics.VisitMiddleware(r)), &http2.Server{})
 	srv := &http.Server{
 		Addr:              ":8080",
-		Handler:           metrics.VisitMiddleware(r),
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	log.Fatal(srv.ListenAndServe())

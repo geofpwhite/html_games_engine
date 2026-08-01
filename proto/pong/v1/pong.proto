@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package pong.v1;
+
+option go_package = "github.com/geofpwhite/html_games_engine/pong/pongv1";
+
+// PongService is a real-time pong game mode. Unlike the other game modes
+// (which broadcast a JSON snapshot over a plain websocket whenever a move
+// comes in), pong needs a ball that keeps moving between inputs, so each
+// player holds one long-lived bidirectional stream: input flows up as the
+// player moves their paddle, and the server pushes a state snapshot down
+// on every physics tick regardless of whether the player has sent anything.
+service PongService {
+  rpc Play(stream ClientMessage) returns (stream ServerMessage);
+}
+
+message ClientMessage {
+  oneof payload {
+    JoinRequest join = 1;
+    PaddleInput input = 2;
+  }
+}
+
+// JoinRequest must be the first message sent on the stream. game_id empty
+// starts a new game; non-empty joins an existing one as the second player.
+message JoinRequest {
+  string game_id = 1;
+}
+
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  DIRECTION_UP = 1;
+  DIRECTION_DOWN = 2;
+  DIRECTION_STOP = 3;
+}
+
+message PaddleInput {
+  Direction direction = 1;
+}
+
+message ServerMessage {
+  oneof payload {
+    JoinResponse joined = 1;
+    GameState state = 2;
+    ErrorMessage error = 3;
+  }
+}
+
+message JoinResponse {
+  string game_id = 1;
+  int32 player_index = 2;
+}
+
+message GameState {
+  double ball_x = 1;
+  double ball_y = 2;
+  double paddle1_y = 3;
+  double paddle2_y = 4;
+  int32 score1 = 5;
+  int32 score2 = 6;
+}
+
+message ErrorMessage {
+  string message = 1;
+}

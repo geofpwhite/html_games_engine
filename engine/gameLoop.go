@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ func GameLoop(
 	inputChannel *pq.PriorityChannel[interfaces.Input],
 	outputChannel *pq.PriorityChannel[string],
 	games map[string]interfaces.Game,
+	ctx context.Context,
 ) {
 	lastModified := map[interfaces.Game]time.Time{}
 	var mu sync.Mutex
@@ -34,7 +36,10 @@ func GameLoop(
 	}
 	go cleanupFunction()
 	for {
-		userInput, priority := inputChannel.PopBlocking()
+		userInput, priority, err := inputChannel.PopBlocking(ctx)
+		if err != nil {
+			break
+		}
 		mu.Lock() // noop unless we are cleaning up
 		gameID := userInput.GameID()
 		game, ok := games[gameID]

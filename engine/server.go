@@ -98,7 +98,10 @@ func Serve(
 	pongService := pong.NewService()
 	pong.Routes(r, tmpl, pongService)
 	pongPath, pongHandler := pongv1connect.NewPongServiceHandler(pongService)
-	r.Handle(pongPath, pongHandler)
+	// Play is a bidi stream, always called over POST (as every gRPC/Connect
+	// streaming call is) - registering it with an explicit method avoids an
+	// ambiguous-pattern panic against the "GET /" catch-all above.
+	r.Handle("POST "+pongPath, pongHandler)
 	r.Handle("GET /pong_static/", http.StripPrefix("/pong_static/", http.FileServer(http.Dir("./pong/web/src/"))))
 
 	r.Handle("GET /metrics", metrics.Handler())

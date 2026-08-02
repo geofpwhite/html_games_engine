@@ -96,12 +96,15 @@ func Serve(
 	accounts.AccountRoutes(r, tmpl, &upgrader, userStore, userCache)
 
 	pongService := pong.NewService()
-	pong.Routes(r, tmpl, pongService)
+	pong.Routes(r, tmpl, &upgrader, pongService)
 	pongPath, pongHandler := pongv1connect.NewPongServiceHandler(pongService)
 	// Play is a bidi stream, always called over POST (as every gRPC/Connect
 	// streaming call is) - registering it with an explicit method avoids an
 	// ambiguous-pattern panic against the "GET /" catch-all above.
 	r.Handle("POST "+pongPath, pongHandler)
+	// Not used by the play page itself (that's plain WS, see pong/ws.go) -
+	// this just exposes the generated Connect/protobuf JS client as a
+	// reference for anyone building a non-browser gRPC/Connect client.
 	r.Handle("GET /pong_static/", http.StripPrefix("/pong_static/", http.FileServer(http.Dir("./pong/web/src/"))))
 
 	r.Handle("GET /metrics", metrics.Handler())

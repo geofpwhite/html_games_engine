@@ -7,19 +7,74 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Pong</title>
 
-  <!-- The generated pong_pb.js (see pong/web) imports these as bare specifiers;
-       there's no bundler in this project, so we resolve them straight off a CDN. -->
-  <script type="importmap">
-  {
-    "imports": {
-      "@bufbuild/protobuf/": "https://esm.sh/@bufbuild/protobuf@2.13.0/",
-      "@bufbuild/protobuf": "https://esm.sh/@bufbuild/protobuf@2.13.0",
-      "@connectrpc/connect": "https://esm.sh/@connectrpc/connect@2.1.2",
-      "@connectrpc/connect-web": "https://esm.sh/@connectrpc/connect-web@2.1.2"
+  <script type="text/javascript">
+    const FIELD = 100; // matches fieldWidth/fieldHeight in pong/pong.go
+    const gameID = "{{ .GameID }}";
+    const statusEl = () => document.getElementById("pong-status");
+
+    const socket = new WebSocket("wss://geof.geofpwhite.us/games/pong/ws/" + gameID);
+
+    let currentDirection = "stop";
+    function sendDirection(dir) {
+      if (dir === currentDirection) return;
+      currentDirection = dir;
+      socket.send(JSON.stringify({ type: "input", direction: dir }));
     }
-  }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") sendDirection("up");
+      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") sendDirection("down");
+    });
+    window.addEventListener("keyup", (e) => {
+      const releasingUp = (e.key === "ArrowUp" || e.key === "w" || e.key === "W") && currentDirection === "up";
+      const releasingDown = (e.key === "ArrowDown" || e.key === "s" || e.key === "S") && currentDirection === "down";
+      if (releasingUp || releasingDown) sendDirection("stop");
+    });
+
+    function draw(state) {
+      const canvas = document.getElementById("pong-canvas");
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      const sx = w / FIELD;
+      const sy = h / FIELD;
+
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.fillStyle = "#eee";
+      ctx.font = "20px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(state.score1 + " : " + state.score2, w / 2, 30);
+
+      const paddleH = 20 * sy;
+      const paddleW = 2 * sx;
+      ctx.fillRect(0, state.paddle1Y * sy - paddleH / 2, paddleW, paddleH);
+      ctx.fillRect(w - paddleW, state.paddle2Y * sy - paddleH / 2, paddleW, paddleH);
+
+      ctx.beginPath();
+      ctx.arc(state.ballX * sx, state.ballY * sy, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    socket.onopen = () => { statusEl().textContent = "Connected. Waiting for opponent..."; };
+    socket.onclose = () => { statusEl().textContent = "Disconnected."; };
+    socket.onerror = () => { statusEl().textContent = "Connection error."; };
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      switch (msg.type) {
+        case "joined":
+          statusEl().textContent = "You are player " + (msg.playerIndex + 1) + ". Share this page's URL to invite an opponent.";
+          break;
+        case "state":
+          draw(msg);
+          break;
+        case "error":
+          statusEl().textContent = "Error: " + msg.message;
+          break;
+      }
+    };
   </script>
-  <script type="module" src="/games/pong_static/pong-client.js"></script>
 
   <style>
   body {
@@ -42,7 +97,7 @@
 	<body>
 		{{ template "navbar" . }}
 		<p id="pong-status">Connecting...</p>
-		<canvas id="pong-canvas" width="600" height="400" data-game-id="{{ .GameID }}"></canvas>
+		<canvas id="pong-canvas" width="600" height="400"></canvas>
 		<p>Use Up/Down or W/S to move your paddle. Share this page's URL to invite an opponent.</p>
 	</body>
 

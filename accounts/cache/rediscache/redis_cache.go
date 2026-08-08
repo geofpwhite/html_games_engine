@@ -20,6 +20,7 @@ const (
 	userSessionPrefix = "usersession:"
 	onlineUsersKey    = "online_users"
 	onlineActivityKey = "online_activity"
+	password          = "geofpwhite"
 )
 
 type cacher struct {
@@ -32,7 +33,8 @@ func NewCache() cache.Cache {
 		addr = "redis:6379"
 	}
 	client := redis.NewClient(&redis.Options{
-		Addr: addr,
+		Addr:     addr,
+		Password: password,
 	})
 	return &cacher{
 		client: *client,

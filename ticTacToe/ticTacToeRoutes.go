@@ -96,6 +96,9 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 			return
 		}
 		fmt.Println(ui)
-		inputChannel.Push(ui, ui.Priority())
+		if err := inputChannel.Push(ui, ui.Priority()); err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 }

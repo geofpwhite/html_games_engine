@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"image/color"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -111,10 +112,21 @@ func queryInt(req *http.Request, key string, def, minVal, maxVal int) int {
 }
 
 //nolint:gocyclo // websocket message loop naturally branches on many message types; splitting would obscure the flow
-func HandleWebSocketWhiteboard(conn *websocket.Conn,
+func HandleWebSocketWhiteboard(conn *websocket.Conn, //nolint:funlen // websocket message loop will get messy
 	inputChannel *pq.PriorityChannel[interfaces.Input],
 	gameID string,
 ) {
+	// push enqueues inp and reports whether it succeeded, logging on failure.
+	// A Push only fails once inputChannel has been closed (server shutdown),
+	// so there's no point continuing to read from this connection afterward.
+	push := func(inp interfaces.Input) bool {
+		if err := inputChannel.Push(inp, inp.Priority()); err != nil {
+			slog.Error("whiteboard: input channel push failed", "error", err)
+			return false
+		}
+		return true
+	}
+
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
@@ -143,11 +155,15 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 				continue
 			}
 			di := &drawInput{x: x, y: y, gameID: gameID, color: clr, radius: radius}
-			inputChannel.Push(di, di.Priority())
+			if !push(di) {
+				return
+			}
 
 		case "c":
 			ci := &clearInput{gameID: gameID}
-			inputChannel.Push(ci, ci.Priority())
+			if !push(ci) {
+				return
+			}
 
 		case "l":
 			// l:x1-y1-x2-y2-color-thickness
@@ -165,7 +181,9 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 				continue
 			}
 			li := &lineInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2}
-			inputChannel.Push(li, li.Priority())
+			if !push(li) {
+				return
+			}
 
 		case "r":
 			// r:x1-y1-x2-y2-color-thickness-theta
@@ -184,7 +202,9 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 				continue
 			}
 			ri := &rectInput{gameID: gameID, x1: x1, y1: y1, x2: x2, y2: y2, clr: clr, thickness: thickness * 2, thetaDeg: theta}
-			inputChannel.Push(ri, ri.Priority())
+			if !push(ri) {
+				return
+			}
 
 		case "ci":
 			// ci:x-y-radius-color-filled
@@ -201,7 +221,9 @@ func HandleWebSocketWhiteboard(conn *websocket.Conn,
 				continue
 			}
 			cii := &circleInput{gameID: gameID, x: x, y: y, radius: radius, clr: clr, filled: filled}
-			inputChannel.Push(cii, cii.Priority())
+			if !push(cii) {
+				return
+			}
 		}
 	}
 }

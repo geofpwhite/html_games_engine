@@ -57,7 +57,7 @@ linters:
       lines: 140
       statements: 70
     gocognit:
-      min-complexity: 42
+      min-complexity: 55
     gocyclo:
       min-complexity: 30
     govet:

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -49,7 +50,11 @@ func GameLoop(
 		}
 		userInput.ChangeState(game)
 		lastModified[game] = time.Now()
-		outputChannel.Push(gameID, priority)
+		if err := outputChannel.Push(gameID, priority); err != nil {
+			slog.Error("gameLoop: output channel push failed", "error", err)
+			mu.Unlock()
+			break
+		}
 		mu.Unlock()
 	}
 }

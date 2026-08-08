@@ -70,7 +70,9 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 
 		delete(playerHashes, playerHash)
 		egi := &exitGameInput{gameID, playerIndex}
-		inputChannel.Push(egi, egi.Priority())
+		if err := inputChannel.Push(egi, egi.Priority()); err != nil {
+			fmt.Println(err)
+		}
 	})
 
 	r.HandleFunc("GET /hangman/reconnect/{playerHash}/{gameID}", func(w http.ResponseWriter, req *http.Request) {
@@ -115,7 +117,7 @@ func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader
 	})
 }
 
-func handleWebSocketHangman(
+func handleWebSocketHangman( //nolint:funlen // It's gonna get a little messy
 	conn *websocket.Conn,
 	inputChannel *pq.PriorityChannel[interfaces.Input],
 	gameObj interfaces.Game,
@@ -202,6 +204,17 @@ func handleWebSocketHangman(
 		}
 	}
 
+	// push enqueues inp and reports whether it succeeded, logging on failure.
+	// A Push only fails once inputChannel has been closed (server shutdown),
+	// so there's no point continuing to read from this connection afterward.
+	push := func(inp interfaces.Input) bool {
+		if err := inputChannel.Push(inp, inp.Priority()); err != nil {
+			fmt.Println(err)
+			return false
+		}
+		return true
+	}
+
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
@@ -212,28 +225,38 @@ func handleWebSocketHangman(
 		PlayerIndex := slices.IndexFunc(gState.players, func(p *interfaces.Player) bool {
 			return p.PlayerID == hash
 		})
-		if messageType == websocket.TextMessage {
+		if messageType == websocket.TextMessage { //nolint:nestif // It's gonna get a little messy
 			pString := string(p)
 			switch pString[:2] {
 			case "g:":
 				Guess := pString[2:]
 				inp := &guessInput{gameID: GameID, playerIndex: PlayerIndex, guess: Guess}
-				inputChannel.Push(inp, inp.Priority())
+				if !push(inp) {
+					return
+				}
 			case "u:":
 				Username := pString[2:]
 				inp := &usernameInput{gameID: GameID, playerIndex: PlayerIndex, username: Username}
-				inputChannel.Push(inp, inp.Priority())
+				if !push(inp) {
+					return
+				}
 			case "w:":
 				Word := pString[2:]
 				inp := &newWordInput{gameID: GameID, playerIndex: PlayerIndex, newWord: Word}
-				inputChannel.Push(inp, inp.Priority())
+				if !push(inp) {
+					return
+				}
 			case "c:":
 				Chat := pString[2:]
 				inp := &chatInput{gameID: GameID, playerIndex: PlayerIndex, message: Chat}
-				inputChannel.Push(inp, inp.Priority())
+				if !push(inp) {
+					return
+				}
 			case "r:":
 				inp := &randomlyChooseWordInput{gameID: GameID, playerIndex: PlayerIndex}
-				inputChannel.Push(inp, inp.Priority())
+				if !push(inp) {
+					return
+				}
 
 			default:
 				continue

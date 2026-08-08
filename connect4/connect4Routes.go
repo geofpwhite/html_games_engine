@@ -77,20 +77,26 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 				switch string(msg) {
 				case "r":
 					c4i := &connect4RotateInput{gameID: gameID, playerIndex: -1}
-					inputChannel.Push(c4i, c4i.Priority())
+					if err = inputChannel.Push(c4i, c4i.Priority()); err != nil {
+						slog.Error("connect4: input channel push failed", "error", err)
+						return
+					}
 				default:
 					msgStrings := strings.Split(string(msg), ",")
 					team, _ := strconv.Atoi(msgStrings[0])
 					column, _ := strconv.Atoi(msgStrings[1])
 					c4i := &connect4InsertInput{gameID: gameID, team: team, column: column}
-					inputChannel.Push(c4i, c4i.Priority())
+					if err = inputChannel.Push(c4i, c4i.Priority()); err != nil {
+						slog.Error("connect4: input channel push failed", "error", err)
+						return
+					}
 				}
-			} else {
-				obj := make(map[string]any)
-				err := json.Unmarshal(msg, &obj)
-				if err != nil {
-					http.Error(w, "can't unmarshall json", http.StatusInternalServerError)
-				}
+				continue
+			}
+			obj := make(map[string]any)
+			err = json.Unmarshal(msg, &obj)
+			if err != nil {
+				http.Error(w, "can't unmarshall json", http.StatusInternalServerError)
 			}
 		}
 	})

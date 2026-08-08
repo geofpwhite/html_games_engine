@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strconv"
@@ -127,7 +128,10 @@ func HandleWebSocketConnectTheDots(conn *websocket.Conn,
 					coords:      coords,
 					gameID:      gameID,
 				}
-				inputChannel.Push(ctdaei, ctdaei.Priority())
+				if err := inputChannel.Push(ctdaei, ctdaei.Priority()); err != nil {
+					slog.Error("connectTheDots: input channel push failed", "error", err)
+					return
+				}
 
 			default:
 				continue

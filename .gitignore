@@ -6,3 +6,4 @@ accounts.db
 app.exe
 html_games_engine.exe
 *node_modules
+words.db

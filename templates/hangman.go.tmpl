@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<link rel="icon" type="image/png" href="/games/favicon.png">
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Hangman</title>
+
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    text-align: center;
+    min-height: 100vh;
+    margin: 0;
+    padding-top: 20px;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover { background-color: #0056b3; }
+  .the-word, .guesses-left, .letters-guessed, .player-names,
+  .username-input-box, .new-word-input-box { margin-bottom: 20px; }
+  .letter-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    padding: 10px 15%;
+  }
+  .letter-button {
+    background-color: #28a745;
+  }
+  .letter-button:hover { background-color: #218838; }
+  #letters-guessed-container span {
+    margin-right: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .grateful-man {
+    position: relative;
+    top: 20px;
+    width: 300px;
+    max-width: 90vw;
+    height: auto;
+    margin-bottom: 10px;
+  }
+  .stick-figure {
+    position: relative;
+    width: 100px;
+    height: 230px;
+    background-color: transparent;
+    display: block;
+    margin: 20px auto 0;
+  }
+  .gallows-top { width: 48px; border: 1px solid black; margin: 0 auto; }
+  .gallows-floor { width: 148px; border: 1px solid black; margin: 0 auto; }
+  .gallows-vertical { height: 230px; width: 0px; border: 1px solid black; position: absolute; left: 50%; top: 0; }
+  .rope { position: absolute; top: 0; left: 50%; height: 30px; border: 2px solid #333; }
+  .head {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+    width: 50px; height: 50px; background-color: transparent;
+    border-width: 1px; border-radius: 50%;
+  }
+  .body { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 1px; height: 100px; }
+  .right-leg, .left-leg { position: absolute; top: 180px; width: 1px; height: 50px; }
+  .right-leg { left: 40%; transform: rotate(20deg); }
+  .left-leg { left: 60%; transform: rotate(-20deg); }
+  .right-arm, .left-arm { position: absolute; top: 80px; width: 1px; height: 50px; }
+  .right-arm { left: 30%; transform: rotate(45deg); }
+  .left-arm { left: 70%; transform: rotate(-45deg); }
+
+  .chat-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-color: #fff;
+    overflow-y: auto;
+    padding: 10px;
+    box-sizing: border-box;
+    border-left: 1px solid #ddd;
+    text-align: left;
+  }
+  .chat-sidebar .container {
+    border: 2px solid #dedede;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    overflow: auto;
+  }
+  .time-right { float: right; color: #000; margin-left: 10px; }
+  .time-left { float: left; color: #000; margin-right: 10px; }
+  </style>
+	</head>
+
+	<body>
+		{{ template "navbar" . }}
+
+		<div id="exit-game-container">
+			<button id="exit-game-btn" type="button">Exit Game</button>
+		</div>
+
+		<div id="stick-figure-container"></div>
+		<div id="turn-host-display"></div>
+
+		<div class="the-word">
+			<h1 id="word-display"></h1>
+		</div>
+
+		<div class="guesses-left">
+			<h1 id="guesses-display"></h1>
+		</div>
+
+		<div class="letters-guessed" id="letters-guessed-container"></div>
+		<div class="player-names" id="player-names-container"></div>
+		<div class="username-input-box" id="username-box"></div>
+		<div class="new-word-input-box" id="new-word-box"></div>
+		<div class="letter-grid" id="letter-grid"></div>
+
+		<button id="open-chat" type="button">Toggle Chat</button>
+		<div id="chat-container"></div>
+
+		<h2>game code {{ .GameID }}</h2>
+
+  <script type="text/javascript">
+    const url = "https://geof.geofpwhite.us"
+    const gameID = "{{ .GameID }}"
+    const HOST_WINS = 1
+    const HOST_LOSES = 2
+    const alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+      return match ? decodeURIComponent(match[1]) : ''
+    }
+    function setCookie(name, value) {
+      if (value) {
+        document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=' + (60 * 60 * 24 * 30)
+      } else {
+        document.cookie = name + '=; path=/; max-age=0'
+      }
+    }
+    function escapeHTML(s) {
+      const div = document.createElement('div')
+      div.textContent = s === undefined || s === null ? '' : String(s)
+      return div.innerHTML
+    }
+
+    // Client-only view of the game. Mirrors the original React client's
+    // merge behavior: only overwrite a field when the server actually sent
+    // a meaningful value for it, since not every push repopulates every
+    // field (e.g. the per-tick broadcast never re-sends `hash`).
+    let hasState = false
+    let state = {
+      needNewWord: false,
+      players: [],
+      playerIndex: -1,
+      turn: -1,
+      host: -1,
+      revealedWord: "",
+      lettersGuessed: "",
+      guessesLeft: -1,
+      winner: -1,
+      chatLogs: [],
+      hash: "",
+    }
+
+    function mergeState(gs) {
+      if (gs.hash && gs.hash !== "undefined") {
+        state.hash = gs.hash
+        setCookie('hash', gs.hash)
+      } else if (gs.hash === "undefined") {
+        state.hash = ''
+        setCookie('hash', '')
+      }
+      if (gs.needNewWord !== undefined) state.needNewWord = gs.needNewWord
+      if (gs.players && gs.players.length > 0) state.players = gs.players
+      if (gs.turn !== undefined && gs.turn !== -1) state.turn = gs.turn
+      if (gs.host !== undefined && gs.host !== -1) state.host = gs.host
+      if (gs.revealedWord) state.revealedWord = gs.revealedWord
+      if (gs.lettersGuessed !== undefined && gs.lettersGuessed !== null) state.lettersGuessed = gs.lettersGuessed
+      if (gs.guessesLeft !== undefined && gs.guessesLeft !== -1) state.guessesLeft = gs.guessesLeft
+      if (gs.playerIndex !== undefined && gs.playerIndex !== -1) state.playerIndex = gs.playerIndex
+      state.chatLogs = gs.chatLogs ? gs.chatLogs : []
+      state.winner = gs.winner
+    }
+
+    // --- rendering ---
+
+    function renderStickFigure() {
+      const el = document.getElementById('stick-figure-container')
+      if (!hasState) { el.innerHTML = ''; return }
+      if (state.winner === HOST_LOSES) {
+        el.innerHTML = '<img src="/games/hangman/grateful.jpeg" alt="" class="grateful-man">'
+        return
+      }
+      const g = state.guessesLeft
+      const dark = '#333', light = 'transparent'
+      el.innerHTML =
+        '<div class="stick-figure">' +
+        '<div class="gallows-top" style="background-color:' + (g < 8 ? dark : light) + '"></div>' +
+        '<div class="gallows-vertical" style="background-color:' + (g < 9 ? dark : light) + '"></div>' +
+        '<div class="rope" style="background-color:' + (g < 7 ? dark : light) + '"></div>' +
+        '<div class="head" style="border:' + (g < 6 ? '1px solid #333' : '1px solid transparent') + '"></div>' +
+        '<div class="body" style="background-color:' + (g < 5 ? dark : light) + '"></div>' +
+        '<div class="right-leg" style="background-color:' + (g < 4 ? dark : light) + '"></div>' +
+        '<div class="left-leg" style="background-color:' + (g < 3 ? dark : light) + '"></div>' +
+        '<div class="right-arm" style="background-color:' + (g < 2 ? dark : light) + '"></div>' +
+        '<div class="left-arm" style="background-color:' + (state.winner !== -1 ? dark : light) + '"></div>' +
+        '<div class="gallows-floor" style="background-color:' + (g < 10 ? dark : light) + '"></div>' +
+        '</div>'
+    }
+
+    function renderTurnHostDisplay() {
+      const el = document.getElementById('turn-host-display')
+      if (!hasState) { el.innerHTML = ''; return }
+      const isHost = state.host === state.playerIndex
+      let text
+      if (isHost) {
+        text = "You're the host"
+      } else if (state.needNewWord) {
+        text = "waiting for the host"
+      } else if (state.turn === state.playerIndex) {
+        text = "It's your turn"
+      } else {
+        text = "Not your turn"
+      }
+      el.innerHTML = '<h2>' + escapeHTML(text) + '</h2>'
+    }
+
+    function renderWord() {
+      document.getElementById('word-display').textContent = state.revealedWord.split('').join(' ')
+    }
+
+    function renderGuessesOrCongrats() {
+      const el = document.getElementById('guesses-display')
+      if (!hasState) { el.textContent = ''; return }
+      let text = ''
+      if (state.needNewWord && state.players.length > 0) {
+        if (state.winner === HOST_LOSES) {
+          const idx = (state.host + state.players.length - 1) % state.players.length
+          text = state.players[idx] + "'s word was guessed"
+        } else if (state.winner === HOST_WINS) {
+          const previousHost = state.host === 0 ? state.players.length - 1 : state.host - 1
+          text = state.players[previousHost] + " won"
+        }
+      } else if (!state.needNewWord) {
+        text = state.guessesLeft + " Guesses Left"
+      }
+      el.textContent = text
+    }
+
+    function determineColor(letter) {
+      if (!hasState || state.needNewWord) return 'black'
+      if (state.lettersGuessed.includes(letter)) {
+        return state.revealedWord.includes(letter) ? 'green' : 'red'
+      }
+      return 'black'
+    }
+
+    function renderLettersGuessed() {
+      const el = document.getElementById('letters-guessed-container')
+      el.innerHTML = state.lettersGuessed.split('').map((l) =>
+        '<span style="color:' + determineColor(l) + '">' + escapeHTML(l) + '</span>'
+      ).join('')
+    }
+
+    function renderPlayerNames() {
+      const el = document.getElementById('player-names-container')
+      if (!hasState || state.players.length === 0) { el.innerHTML = ''; return }
+      const you = state.players[state.playerIndex] || ''
+      const turnPlayer = state.players[state.turn] || ''
+      let html = '<div>your username is ' + escapeHTML(you) + ', it is ' + escapeHTML(turnPlayer) + "'s turn</div>"
+      state.players.forEach((name, id) => {
+        const color = id === state.turn ? 'green' : (id === state.host ? 'red' : 'black')
+        const label = id === state.host ? name + '<- HOST' : name
+        html += '<div style="color:' + color + '">' + escapeHTML(label) + '</div>'
+      })
+      el.innerHTML = html
+    }
+
+    let wantsToChangeUsername = false
+    function renderUsernameBox() {
+      const el = document.getElementById('username-box')
+      if (wantsToChangeUsername) {
+        el.innerHTML =
+          '<label for="usernameInput">Username: </label>' +
+          '<input type="text" id="usernameInput" placeholder="Type here...">' +
+          '<button id="submit-username" type="button">Submit</button>'
+        document.getElementById('submit-username').onclick = () => {
+          const val = document.getElementById('usernameInput').value
+          if (val.length > 0 && val.length <= 20) {
+            send('u:' + val)
+          }
+          wantsToChangeUsername = false
+          renderUsernameBox()
+        }
+      } else {
+        el.innerHTML = '<button id="wants-username" type="button">Change Username</button>'
+        document.getElementById('wants-username').onclick = () => {
+          wantsToChangeUsername = true
+          renderUsernameBox()
+        }
+      }
+    }
+
+    function renderNewWordBox() {
+      const el = document.getElementById('new-word-box')
+      if (!hasState || !state.needNewWord || state.host !== state.playerIndex) { el.innerHTML = ''; return }
+      el.innerHTML =
+        '<label for="newWordInput">We need a new word </label>' +
+        '<input type="text" id="newWordInput" placeholder="Type here...">' +
+        '<button id="submit-new-word" type="button">Submit</button>' +
+        '<button id="random-new-word" type="button">Random word</button>'
+      document.getElementById('submit-new-word').onclick = () => {
+        const word = document.getElementById('newWordInput').value.toLowerCase()
+        for (const c of word) {
+          if (!alphabet.includes(c)) return
+        }
+        send('w:' + word)
+      }
+      document.getElementById('random-new-word').onclick = () => send('r:')
+    }
+
+    function renderLetterGrid() {
+      const el = document.getElementById('letter-grid')
+      if (!hasState || state.needNewWord) { el.innerHTML = ''; return }
+      el.innerHTML = alphabet.split('').map((l) => {
+        if (state.lettersGuessed.includes(l)) return ''
+        return '<button class="letter-button" type="button" data-letter="' + l + '">' + l + '</button>'
+      }).join('')
+      el.querySelectorAll('button').forEach((btn) => {
+        btn.onclick = () => send('g:' + btn.dataset.letter)
+      })
+    }
+
+    let openChat = false
+    function renderChat() {
+      document.getElementById('open-chat').onclick = () => {
+        openChat = !openChat
+        renderChat()
+      }
+      const el = document.getElementById('chat-container')
+      if (!openChat) { el.innerHTML = ''; return }
+      const you = state.players[state.playerIndex]
+      const messages = state.chatLogs.map((c) => {
+        const mine = c.sender === you
+        return '<div class="container">' +
+          '<p>' + escapeHTML(c.message) + '</p>' +
+          '<span class="' + (mine ? 'time-right' : 'time-left') + '">' + escapeHTML(c.sender) + '</span>' +
+          '</div>'
+      }).join('')
+      el.innerHTML =
+        '<div class="chat-sidebar">' +
+        '<h2>Chat Messages</h2>' +
+        messages +
+        '<input type="text" id="chat-input">' +
+        '<button id="chat-send" type="button">Send</button>' +
+        '</div>'
+      const input = document.getElementById('chat-input')
+      const sendChat = () => {
+        if (input.value) { send('c:' + input.value); input.value = '' }
+      }
+      document.getElementById('chat-send').onclick = sendChat
+      input.onkeyup = (e) => { if (e.key === 'Enter') sendChat() }
+    }
+
+    function render() {
+      renderStickFigure()
+      renderTurnHostDisplay()
+      renderWord()
+      renderGuessesOrCongrats()
+      renderLettersGuessed()
+      renderPlayerNames()
+      renderUsernameBox()
+      renderNewWordBox()
+      renderLetterGrid()
+      renderChat()
+    }
+
+    // --- websocket ---
+
+    let socket
+    function send(msg) {
+      if (socket && socket.readyState === WebSocket.OPEN) socket.send(msg)
+    }
+
+    document.getElementById('exit-game-btn').onclick = () => {
+      const hash = state.hash || getCookie('hash')
+      setCookie('hash', '')
+      fetch(url + '/games/hangman/exit_game/' + hash + '/' + gameID).then(() => {
+        window.location.href = url + '/games/hangman'
+      })
+    }
+
+    async function connect() {
+      const hash = getCookie('hash')
+      let reconnect = false
+      if (hash) {
+        const resp = await fetch(url + '/games/hangman/valid/' + hash)
+        const validGameID = (await resp.text()).trim()
+        reconnect = validGameID === gameID
+        if (!reconnect) setCookie('hash', '')
+      }
+      const wsURL = reconnect
+        ? 'wss://geof.geofpwhite.us/games/hangman/reconnect/' + hash + '/' + gameID
+        : 'wss://geof.geofpwhite.us/games/hangman/ws/' + gameID
+      socket = new WebSocket(wsURL)
+
+      socket.onmessage = (event) => {
+        let obj
+        try {
+          obj = JSON.parse(event.data)
+        } catch (e) {
+          console.log('error parsing message', e)
+          return
+        }
+        if (obj.warning === '1' || obj.warning === '2') {
+          setCookie('hash', '')
+          window.location.href = url + '/games/hangman'
+          return
+        }
+        mergeState(obj)
+        hasState = true
+        render()
+      }
+      socket.onclose = () => {
+        document.getElementById('turn-host-display').innerHTML = '<h2>Disconnected.</h2>'
+      }
+    }
+
+    render()
+    connect()
+  </script>
+	</body>
+
+</html>

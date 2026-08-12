@@ -61,7 +61,7 @@ type hangman struct {
 }
 
 func newGameHangman() *hangman {
-	wordCheck, _ := sql.Open("sqlite3", "./words.db")
+	wordCheck, _ := sql.Open("sqlite", "./words.db")
 	gState := &hangman{
 		wordCheck:    wordCheck,
 		currentWord:  "",

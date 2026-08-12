@@ -16,6 +16,11 @@ RUN go mod download
 
 COPY . .
 
+# Regenerate words.db from words.txt at build time rather than trusting a
+# committed binary; drop any pre-existing one first since the generator
+# panics on CREATE TABLE if the words table already exists.
+RUN rm -f words.db && go run ./setup/dictionarysetup.go
+
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main .
 
 # Final stage

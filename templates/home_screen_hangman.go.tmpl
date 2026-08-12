@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<link rel="icon" type="image/png" href="/games/favicon.png">
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Hangman</title>
+  <script type="text/javascript" >
+  const url = "https://geof.geofpwhite.us"
+
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : ''
+  }
+
+  // If we already have a live player hash from a previous visit, skip
+  // straight to that game instead of showing the picker.
+  async function checkReconnect() {
+    const hash = getCookie('hash')
+    if (!hash) return
+    const resp = await fetch(url + '/games/hangman/valid/' + hash)
+    const gameID = (await resp.text()).trim()
+    if (gameID && gameID !== '-1') {
+      window.location.href = url + '/games/hangman/' + gameID
+    }
+  }
+  checkReconnect()
+
+  async function newgame(){
+    let x = await fetch(url+"/games/hangman/new_game")
+    let obj = await x.json()
+    window.location.href = url+ "/games/hangman/" + obj.gameID
+  }
+
+  function joingame(){
+    const id = document.getElementById("gameID").value.trim()
+    if (id) window.location.href = url + "/games/hangman/" + id
+  }
+  </script>
+
+  <style>
+  .button {
+      background-color: white;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      text-align: center;
+      line-height: 50px;
+    }
+  #gameID {
+      border-radius: 25px;
+      padding: 0 12px;
+      border: 1px solid #ccc;
+      height: 50px;
+      font-size: 14px;
+      outline: none;
+    }
+  </style>
+	</head>
+
+	<body>
+
+		<button class="button" onclick="newgame()">
+			New Game
+		</button>
+		<br><br>
+		<input type="text" id="gameID" placeholder="Game ID">
+		<button class="button" onclick="joingame()">
+			Join Game
+		</button>
+
+	</body>
+
+</html>

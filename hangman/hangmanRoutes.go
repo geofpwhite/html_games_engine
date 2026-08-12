@@ -17,11 +17,32 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Routes(r *http.ServeMux, _ *template.Template, upgrader *websocket.Upgrader,
+func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgrader,
 	games map[string]interfaces.Game, playerHashes map[string]*websocket.Conn, inputChannel *pq.PriorityChannel[interfaces.Input],
 	sessions *gamesession.Tracker,
 ) {
 	r.Handle("GET /hangman_game/", http.StripPrefix("/hangman_game/", http.FileServer(http.Dir("./build_hangman/"))))
+
+	r.HandleFunc("GET /hangman/grateful.jpeg", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "grateful.jpeg")
+	})
+
+	r.HandleFunc("GET /hangman", func(w http.ResponseWriter, _ *http.Request) {
+		if err := tmpl.ExecuteTemplate(w, "home_screen_hangman.go.tmpl", nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	r.HandleFunc("GET /hangman/{gameID}", func(w http.ResponseWriter, req *http.Request) {
+		gameID := req.PathValue("gameID")
+		if gameID == "" {
+			http.NotFound(w, req)
+			return
+		}
+		if err := tmpl.ExecuteTemplate(w, "hangman.go.tmpl", map[string]any{"GameID": gameID}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 
 	r.HandleFunc("GET /hangman/new_game", func(w http.ResponseWriter, _ *http.Request) {
 		gState := newGameHangman()

@@ -3,22 +3,33 @@
 	<head>
 		<link rel="icon" type="image/png" href="/games/favicon.png">
 		<title>Challenge a Player</title>
+		{{ template "styles" . }}
 		<style>
-			#online-list { list-style: none; padding: 0; }
-			#online-list li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
-			#incoming-challenge { display: none; border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+			.page-wrap { max-width: 560px; margin: 32px auto; padding: 0 20px; }
+			#online-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+			#online-list li {
+				display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+				background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+			}
+			#online-list li span { flex: 1; }
+			#incoming-challenge {
+				display: none; border: 1px solid var(--border); background: var(--surface);
+				border-radius: var(--radius); padding: 16px; margin-top: 20px;
+			}
 		</style>
 	</head>
 	<body>
 		{{ template "navbar" . }}
-		<h2>Online Players</h2>
-		<p id="error" style="color:red;"></p>
-		<ul id="online-list"></ul>
+		<div class="page-wrap">
+			<h2>Online Players</h2>
+			<p id="error"></p>
+			<ul id="online-list"></ul>
 
-		<div id="incoming-challenge">
-			<p id="incoming-challenge-text"></p>
-			<button id="accept-button">Accept</button>
-			<button id="decline-button">Decline</button>
+			<div id="incoming-challenge">
+				<p id="incoming-challenge-text"></p>
+				<button id="accept-button">Accept</button>
+				<button id="decline-button">Decline</button>
+			</div>
 		</div>
 	</body>
 </html>

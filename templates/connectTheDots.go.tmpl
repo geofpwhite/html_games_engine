@@ -4,6 +4,8 @@
 
 	<head>
 		<link rel="icon" type="image/png" href="/games/favicon.png">
+		<title>Connect the Dots</title>
+  {{ template "styles" . }}
   <style>
     .ver-0 {
       position: relative;
@@ -121,7 +123,7 @@
     }
 
     .grid-container {
-      margin-left:30%;
+      margin: 40px auto 0;
       height: 400px;
       display: grid;
       overflow: hidden;
@@ -164,7 +166,7 @@
 	</head>
 
 	<body>
-		{{ template "navbar" }}
+		{{ template "navbar" . }}
 		<div class="grid-container" id="grid">
 			{{ $grid := .Rows }} 
 			{{ range $i, $row := $grid }} 

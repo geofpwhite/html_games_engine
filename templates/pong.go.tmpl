@@ -76,20 +76,21 @@
     };
   </script>
 
+  {{ template "styles" . }}
   <style>
   body {
-    font-family: sans-serif;
-    background: #1a1a2e;
-    color: #eee;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding-top: 20px;
     gap: 12px;
   }
+  #pong-status { color: var(--text-dim); }
   #pong-canvas {
     background-color: #111;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
   }
   </style>
 	</head>

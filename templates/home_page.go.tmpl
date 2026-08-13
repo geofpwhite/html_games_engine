@@ -5,36 +5,54 @@
 		<link rel="icon" type="image/png" href="/games/favicon.png">
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Connect 4 </title>
-  <script type="text/javascript" >
-  
-  </script>
-
+		<title>Geoffrey's Games</title>
+  {{ template "styles" . }}
   <style>
-      .button {
-        background-color: white;
-        border-radius: 25px;
-        {{/* width: 50px;
-        height: 50px; */}}
-        border: 1px solid #ccc;
-        text-align: center;
-        line-height: 50px;
-
-
-      }
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      max-width: 600px;
+      width: 100%;
+    }
+    .game-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 16px;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      transition: transform 0.1s ease, border-color 0.15s ease;
+    }
+    .game-tile:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    .game-tile .icon {
+      display: block;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
   </style>
 	</head>
 
 	<body>
 		{{ template "navbar" . }}
-		<div style="position:absolute;right:50%;top:20%;">
-			<h2> Pick a Game </h2>
-			<a href="/games/hangman"><button class="button" type="button" id="hangman">hangman</button></a>
-			<a href="/games/connect4"><button class="button" type="button" id="connect4" >connect 4</button></a>
-			<a href="/games/connect-the-dots"><button class="button" type="button" id="connectTheDots" >connect the dots</button></a>
-			<a href="/games/tictactoe"><button class="button" type="button" id="tictactoe" >tictactoe</button></a>
-			<a href="/games/whiteboard"><button class="button" type="button" id="whiteboard" >whiteboard</button></a>
-			<a href="/games/pong"><button class="button" type="button" id="pong" >pong</button></a>
+		<div class="page-center">
+			<h1>Pick a Game</h1>
+			<div class="game-grid">
+				<a class="game-tile" id="hangman" href="/games/hangman"><span class="icon">🪢</span>Hangman</a>
+				<a class="game-tile" id="connect4" href="/games/connect4"><span class="icon">🔴</span>Connect 4</a>
+				<a class="game-tile" id="connectTheDots" href="/games/connect-the-dots"><span class="icon">🔗</span>Connect the Dots</a>
+				<a class="game-tile" id="tictactoe" href="/games/tictactoe"><span class="icon">❌</span>Tic Tac Toe</a>
+				<a class="game-tile" id="whiteboard" href="/games/whiteboard"><span class="icon">🎨</span>Whiteboard</a>
+				<a class="game-tile" id="pong" href="/games/pong"><span class="icon">🏓</span>Pong</a>
+			</div>
 		</div>
 	</body>
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -56,7 +57,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		if gameID == "" {
 			return
 		}
-		if err := tmpl.ExecuteTemplate(w, "tictactoe.go.tmpl", map[string]any{"Rows": (games[gameID]).(*ticTacToe).field}); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "ticTacToe.go.tmpl", map[string]any{"Rows": (games[gameID]).(*ticTacToe).field}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
@@ -92,12 +93,12 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 	for {
 		err := conn.ReadJSON(ui)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("Error reading JSON from WebSocket connection:", "error", err)
 			return
 		}
 		fmt.Println(ui)
 		if err := inputChannel.Push(ui, ui.Priority()); err != nil {
-			fmt.Println(err)
+			slog.Error("Error pushing to inputChannel:", "error", err)
 			return
 		}
 	}

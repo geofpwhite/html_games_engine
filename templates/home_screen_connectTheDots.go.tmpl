@@ -5,10 +5,10 @@
 		<link rel="icon" type="image/png" href="/games/favicon.png">
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Connect 4 </title>
+		<title>Connect the Dots</title>
   <script type="text/javascript" >
   const url = "https://geof.geofpwhite.us"
-  
+
   async function newgame(){
     let x = await fetch(url+"/games/connect-the-dots/new_game")
     let code = await x.text()
@@ -22,37 +22,20 @@
     if (id) window.location.href = url + "/games/connect-the-dots/" + id
   }
   </script>
-
-  <style>
-  .button {
-      background-color: white;
-      border-radius: 25px;
-      border: 1px solid #ccc;
-      text-align: center;
-      line-height: 50px;
-    }
-  #gameID {
-      border-radius: 25px;
-      padding: 0 12px;
-      border: 1px solid #ccc;
-      height: 50px;
-      font-size: 14px;
-      outline: none;
-    }
-  </style>
+  {{ template "styles" . }}
 	</head>
 
 	<body>
-
-		<button class="button" onclick="newgame()">
-			New Game
-		</button>
-		<br><br>
-		<input type="text" id="gameID" placeholder="Game ID">
-		<button class="button" onclick="joingame()">
-			Join Game
-		</button>
-
+		{{ template "navbar" . }}
+		<div class="page-center">
+			<div class="card">
+				<h2>Connect the Dots</h2>
+				<button class="button" onclick="newgame()">New Game</button>
+				<br><br>
+				<input type="text" id="gameID" placeholder="Game ID">
+				<button class="button" onclick="joingame()">Join Game</button>
+			</div>
+		</div>
 	</body>
 
 </html>

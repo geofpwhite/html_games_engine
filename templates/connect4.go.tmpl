@@ -5,7 +5,7 @@
 		<link rel="icon" type="image/png" href="/games/favicon.png">
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Connect 4 Grid</title>
+		<title>Connect 4</title>
   <script type="text/javascript">
     let gamecode = window.location.href;
     gamecode = gamecode.substring(gamecode.indexOf("4/") + 2);
@@ -24,78 +24,61 @@
         for (let j = 0; j < 8; j++) {
           let tag = document.getElementById(i + "-" + j);
           ary[i][j] == 1
-            ? (tag.style.backgroundColor = "blue")
+            ? (tag.style.backgroundColor = "#4c8dff")
             : ary[i][j] == 2
-              ? (tag.style.backgroundColor = "red")
-              : (tag.style.backgroundColor = "white");
+              ? (tag.style.backgroundColor = "#ff5c5c")
+              : (tag.style.backgroundColor = "#262b47");
         }
       }
     };
   </script>
 
+  {{ template "styles" . }}
   <style>
-    /* Add any custom styling for your grid here */
     .grid {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      grid-gap: 10px;
+      grid-gap: 8px;
     }
 
-    .cell-0 {
-      background-color: white;
-      width: 50px;
-      height: 50px;
-      border: 1px solid #ccc;
-      text-align: center;
-      line-height: 50px;
+    .cell-0, .cell-1, .cell-2 {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
     }
-
-    .cell-1 {
-      background-color: blue;
-      width: 50px;
-      height: 50px;
-      border: 1px solid #ccc;
-      text-align: center;
-      line-height: 50px;
-    }
-
-    .cell-2 {
-      background-color: red;
-      width: 50px;
-      height: 50px;
-      border: 1px solid #ccc;
-      text-align: center;
-      line-height: 50px;
-    }
+    .cell-0 { background-color: var(--surface-2); }
+    .cell-1 { background-color: #4c8dff; }
+    .cell-2 { background-color: #ff5c5c; }
 
     .button {
-      background-color: white;
-      border-radius: 25px;
-      width: 50px;
-      height: 50px;
-      border: 1px solid #ccc;
-      text-align: center;
-      line-height: 50px;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 8px;
     }
 
     #mydiv {
       position: absolute;
       z-index: 9;
-      background-color: #f1f1f1;
-      border: 1px solid #d3d3d3;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
       text-align: center;
-      width: 250px;
-      position: absolute;
+      width: 260px;
       right: 50%;
-      top: 80%;
+      top: 20%;
+      overflow: hidden;
     }
 
     #mydivheader {
       padding: 10px;
       cursor: move;
       z-index: 10;
-      background-color: #2196f3;
-      color: #fff;
+      background-color: var(--surface-2);
+      color: var(--text);
+      font-size: 14px;
     }
   </style>
 	</head>
@@ -121,10 +104,10 @@
 							{{ end }}
 						{{ end }}
 						{{ range $row, $x := .Rows }}
-							<button class="button" onclick="insert(1,{{ $row }})" style="background-color: blue"></button>
+							<button class="button" onclick="insert(1,{{ $row }})" style="background-color: #4c8dff"></button>
 						{{ end }}
 						{{ range $row, $x := .Rows }}
-							<button class="button" onclick="insert(2,{{ $row }})" style="background-color: red"></button>
+							<button class="button" onclick="insert(2,{{ $row }})" style="background-color: #ff5c5c"></button>
 						{{ end }}
 					</div>
 					<button class="button" onclick="rotate()">Rotate</button>

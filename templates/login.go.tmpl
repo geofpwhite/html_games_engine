@@ -3,26 +3,30 @@
 	<head>
 		<link rel="icon" type="image/png" href="/games/favicon.png">
 		<title>Login</title>
+		{{ template "styles" . }}
 	</head>
 	<body>
 		{{ template "navbar" . }}
-		<form id="login-form">
-			<ul>
-				<li>
-					<label for="username"><b>Username</b></label>
-					<input type="text" placeholder="Enter Username" name="Username" id="username" required>
-				</li>
+		<div class="page-center">
+			<form id="login-form" class="card" style="width: 320px;">
+				<h2>Login</h2>
+				<ul>
+					<li>
+						<label for="username">Username</label>
+						<input type="text" placeholder="Enter Username" name="Username" id="username" required>
+					</li>
 
-				<li>
-					<label for="password"><b>Password</b></label>
-					<input type="password" placeholder="Enter Password" name="Password" id="password" required>
-				</li>
-				<li>
-					<button type="submit">Login</button>
-				</li>
-			</ul>
-			<p id="error" style="color:red;"></p>
-		</form>
+					<li>
+						<label for="password">Password</label>
+						<input type="password" placeholder="Enter Password" name="Password" id="password" required>
+					</li>
+					<li>
+						<button type="submit" style="width: 100%;">Login</button>
+					</li>
+				</ul>
+				<p id="error"></p>
+			</form>
+		</div>
 	</body>
 </html>
 <script type="text/javascript">

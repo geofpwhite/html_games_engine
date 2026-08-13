@@ -50,8 +50,8 @@
     display: block;
     margin: 20px auto 0;
   }
-  .gallows-top { width: 48px; border: 1px solid var(--text-dim); margin: 0 auto; }
-  .gallows-floor { width: 148px; border: 1px solid var(--text-dim); margin: 0 auto; }
+  .gallows-top { width: 48px; border: 1px solid var(--text-dim); position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+  .gallows-floor { width: 148px; border: 1px solid var(--text-dim); position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); }
   .gallows-vertical { height: 230px; width: 0px; border: 1px solid var(--text-dim); position: absolute; left: 50%; top: 0; }
   .rope { position: absolute; top: 0; left: 50%; height: 30px; border: 2px solid var(--text-dim); }
   .head {

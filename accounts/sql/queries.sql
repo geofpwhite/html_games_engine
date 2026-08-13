@@ -58,3 +58,12 @@ SET
     EndTime = now()
 WHERE
     GameSessionID = $1;
+
+-- name: GetUserStats :one
+SELECT
+    COUNT(*) AS GamesPlayed,
+    COALESCE(SUM(EXTRACT(EPOCH FROM (EndTime - StartTime))), 0)::float8 AS TotalSeconds
+FROM
+    GameSessions
+WHERE
+    UserID = $1;

@@ -107,3 +107,12 @@ func (s *postgresStore) StartGameSession(ctx context.Context, userID int32, game
 func (s *postgresStore) EndGameSession(ctx context.Context, sessionID int32) error {
 	return s.queries.EndGameSession(ctx, sessionID)
 }
+
+// GetUserStats summarizes the given user's play history across all games.
+func (s *postgresStore) GetUserStats(ctx context.Context, userID int32) (store.UserStats, error) {
+	row, err := s.queries.GetUserStats(ctx, userID)
+	if err != nil {
+		return store.UserStats{}, err
+	}
+	return store.UserStats{GamesPlayed: row.Gamesplayed, TotalSeconds: row.Totalseconds}, nil
+}

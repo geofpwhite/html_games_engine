@@ -78,6 +78,7 @@ func AccountRoutes(
 		"GET /logout":          "logout.go.tmpl",
 		"GET /change-password": "change_password.go.tmpl",
 		"GET /challenge":       "challenge.go.tmpl",
+		"GET /user-stats":      "user_stats.go.tmpl",
 	} {
 		r.HandleFunc(path, func(w http.ResponseWriter, _ *http.Request) {
 			if err := tmpl.ExecuteTemplate(w, page, nil); err != nil {
@@ -91,6 +92,7 @@ func AccountRoutes(
 	r.HandleFunc("POST /accounts/logout", a.authorized(a.logoutHandler))
 	r.HandleFunc("POST /accounts/password", a.authorized(a.changePasswordHandler))
 	r.HandleFunc("GET /accounts/online", a.authorized(a.onlineHandler))
+	r.HandleFunc("GET /accounts/stats", a.authorized(a.statsHandler))
 	r.HandleFunc("GET /accounts/ws", a.authorized(a.wsHandler(upgrader)))
 	r.HandleFunc("POST /accounts/challenge", a.authorized(a.challengeHandler))
 	r.HandleFunc("POST /accounts/challenge/{challengeID}/accept", a.authorized(a.acceptChallengeHandler))
@@ -245,6 +247,26 @@ func (a *accountsAPI) onlineHandler(w http.ResponseWriter, _ *http.Request, user
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(others); err != nil {
 		slog.Error("error writing online response", "error", err)
+	}
+}
+
+type statsResponse struct {
+	GamesPlayed     int64   `json:"gamesPlayed"`
+	TotalTimePlayed float64 `json:"totalTimePlayedSeconds"`
+}
+
+func (a *accountsAPI) statsHandler(w http.ResponseWriter, r *http.Request, userID int32) {
+	stats, err := a.store.GetUserStats(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "error loading stats", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(statsResponse{
+		GamesPlayed:     stats.GamesPlayed,
+		TotalTimePlayed: stats.TotalSeconds,
+	}); err != nil {
+		slog.Error("error writing stats response", "error", err)
 	}
 }
 

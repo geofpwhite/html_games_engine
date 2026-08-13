@@ -9,6 +9,12 @@ type User struct {
 	Username string
 }
 
+// UserStats summarizes a user's play history across all games.
+type UserStats struct {
+	GamesPlayed  int64
+	TotalSeconds float64
+}
+
 // Store defines the interface for all account data access operations.
 type Store interface {
 	// Register creates a new user with the given username and password, returning the new user's ID.
@@ -30,4 +36,6 @@ type Store interface {
 	StartGameSession(ctx context.Context, userID int32, gameType string) (int32, error)
 	// EndGameSession records that a game session has ended.
 	EndGameSession(ctx context.Context, sessionID int32) error
+	// GetUserStats summarizes the given user's play history across all games.
+	GetUserStats(ctx context.Context, userID int32) (UserStats, error)
 }

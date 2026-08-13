@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="icon" type="image/png" href="/games/favicon.png">
+		<title>User Stats</title>
+		{{ template "styles" . }}
+		<style>
+			.page-wrap { max-width: 560px; margin: 32px auto; padding: 0 20px; }
+			.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 20px; }
+			.stat-tile { text-align: center; }
+			.stat-tile .stat-value { font-size: 32px; font-weight: 700; color: var(--accent); }
+			.stat-tile .stat-label { margin-top: 6px; color: var(--text-dim); font-size: 14px; }
+			#games-won { font-size: 18px; color: var(--text-dim); }
+		</style>
+	</head>
+	<body>
+		{{ template "navbar" . }}
+		<div class="page-wrap">
+			<h2>Your Stats</h2>
+			<p id="error"></p>
+			<div class="stats-grid">
+				<div class="card stat-tile">
+					<div class="stat-value" id="games-played">-</div>
+					<div class="stat-label">Games Played</div>
+				</div>
+				<div class="card stat-tile">
+					<div class="stat-value" id="games-won">-</div>
+					<div class="stat-label">Games Won</div>
+				</div>
+				<div class="card stat-tile">
+					<div class="stat-value" id="time-played">-</div>
+					<div class="stat-label">Total Time Played</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+<script type="text/javascript">
+var errorEl = document.getElementById('error');
+var gamesPlayedEl = document.getElementById('games-played');
+var gamesWonEl = document.getElementById('games-won');
+var timePlayedEl = document.getElementById('time-played');
+
+function formatDuration(totalSeconds) {
+  var seconds = Math.max(0, Math.round(totalSeconds));
+  var hours = Math.floor(seconds / 3600);
+  var minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return hours + 'h ' + minutes + 'm';
+  if (minutes > 0) return minutes + 'm';
+  return seconds + 's';
+}
+
+function loadStats() {
+  fetch('/games/accounts/stats')
+    .then(async response => {
+      if (response.status === 401) {
+        window.location.href = '/games/login';
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    })
+    .then(stats => {
+      if (!stats) return;
+      gamesPlayedEl.textContent = stats.gamesPlayed;
+      gamesWonEl.textContent = 'Coming soon';
+      timePlayedEl.textContent = formatDuration(stats.totalTimePlayedSeconds);
+    })
+    .catch((error) => {
+      errorEl.textContent = 'Error loading stats: ' + error.message;
+    });
+}
+
+loadStats();
+</script>

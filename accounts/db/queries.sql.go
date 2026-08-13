@@ -102,6 +102,28 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUs
 	return i, err
 }
 
+const getUserStats = `-- name: GetUserStats :one
+SELECT
+    COUNT(*) AS GamesPlayed,
+    COALESCE(SUM(EXTRACT(EPOCH FROM (EndTime - StartTime))), 0)::float8 AS TotalSeconds
+FROM
+    GameSessions
+WHERE
+    UserID = $1
+`
+
+type GetUserStatsRow struct {
+	Gamesplayed  int64
+	Totalseconds float64
+}
+
+func (q *Queries) GetUserStats(ctx context.Context, userid int32) (GetUserStatsRow, error) {
+	row := q.db.QueryRow(ctx, getUserStats, userid)
+	var i GetUserStatsRow
+	err := row.Scan(&i.Gamesplayed, &i.Totalseconds)
+	return i, err
+}
+
 const getUsernames = `-- name: GetUsernames :many
 SELECT
     Username

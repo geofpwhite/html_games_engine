@@ -57,7 +57,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		if gameID == "" {
 			return
 		}
-		if err := tmpl.ExecuteTemplate(w, "ticTacToe.go.tmpl", map[string]any{"Rows": (games[gameID]).(*ticTacToe).field}); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "tictactoe.go.tmpl", map[string]any{"Rows": (games[gameID]).(*ticTacToe).field}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})

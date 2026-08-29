@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"strings"
 
@@ -30,7 +29,7 @@ func main() {
 		builder.WriteString("('" + line + "'),")
 	}
 	queryStr = builder.String()
-	res, err := db.Exec(queryStr[:len(queryStr)-1])
+	_, err = db.Exec(queryStr[:len(queryStr)-1])
 	if err != nil {
 		panic("something is wrong with sqlite" + err.Error())
 	}

@@ -58,6 +58,7 @@ type hangman struct {
 	chatLogs       []chatLog
 	randomlyChosen bool // boolean for methods to check if they need to act differently because the backend randomly chose a word
 	gameID         string
+	pendingWinners []*interfaces.Player
 }
 
 func newGameHangman() *hangman {
@@ -86,7 +87,7 @@ func (gState *hangman) newPlayer(p interfaces.Player) {
 	}
 }
 
-func (gState *hangman) guess(letter rune) bool {
+func (gState *hangman) guess(letter rune, playerIndex int) bool {
 	gState.mut.Lock()
 	defer gState.mut.Unlock()
 	if gState.needNewWord {
@@ -101,19 +102,20 @@ func (gState *hangman) guess(letter rune) bool {
 				good = true
 			}
 		}
-		x := 0x10p23
-		print(x)
 		switch {
 		case gState.currentWord == gState.revealedWord:
 			gState.needNewWord = true
 			gState.turn = (gState.curHostIndex + 2) % len(gState.players)
 			gState.curHostIndex = (gState.curHostIndex + 1) % len(gState.players)
 			gState.winner = HostLoses
+			gState.pendingWinners = append(gState.pendingWinners, gState.players[playerIndex])
 		case gState.guessesLeft == 1 && !good:
 			gState.needNewWord = true
 			gState.turn = (gState.curHostIndex + 2) % len(gState.players)
 			gState.winner = HostWins
+			winnerIndex := gState.curHostIndex
 			gState.curHostIndex = (gState.curHostIndex + 1) % len(gState.players)
+			gState.pendingWinners = append(gState.pendingWinners, gState.players[winnerIndex])
 		case !good:
 			gState.guessesLeft--
 			gState.turn = (gState.turn + 1) % len(gState.players)
@@ -124,6 +126,16 @@ func (gState *hangman) guess(letter rune) bool {
 		return true
 	}
 	return false
+}
+
+// ConsumeWinners returns the players who won a round since the last call, then
+// clears the pending list. Only ever called from the GameLoop goroutine.
+func (gState *hangman) ConsumeWinners() []*interfaces.Player {
+	gState.mut.Lock()
+	defer gState.mut.Unlock()
+	w := gState.pendingWinners
+	gState.pendingWinners = nil
+	return w
 }
 
 func (gState *hangman) randomNewWord() {

@@ -15,6 +15,9 @@ Game interface for each game state struct to implement
 type Game interface {
 	Players() []*Player
 	JSON() ClientState
+	// ConsumeWinners returns the players who won a round since the last call, then
+	// clears the pending list. Only ever called from the GameLoop goroutine.
+	ConsumeWinners() []*Player
 }
 
 /*
@@ -33,6 +36,9 @@ type Player struct {
 	GameID      string
 	PlayerIndex int
 	Username    string
+	// GameSessionID is the GameSessions row tracking this player's current
+	// connection, or 0 if the player isn't logged in / isn't being tracked.
+	GameSessionID int32
 }
 
 /*

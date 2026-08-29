@@ -10,7 +10,6 @@
 			.stat-tile { text-align: center; }
 			.stat-tile .stat-value { font-size: 32px; font-weight: 700; color: var(--accent); }
 			.stat-tile .stat-label { margin-top: 6px; color: var(--text-dim); font-size: 14px; }
-			#games-won { font-size: 18px; color: var(--text-dim); }
 		</style>
 	</head>
 	<body>
@@ -65,7 +64,7 @@ function loadStats() {
     .then(stats => {
       if (!stats) return;
       gamesPlayedEl.textContent = stats.gamesPlayed;
-      gamesWonEl.textContent = 'Coming soon';
+      gamesWonEl.textContent = stats.gamesWon;
       timePlayedEl.textContent = formatDuration(stats.totalTimePlayedSeconds);
     })
     .catch((error) => {

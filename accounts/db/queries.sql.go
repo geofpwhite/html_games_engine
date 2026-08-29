@@ -105,7 +105,8 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUs
 const getUserStats = `-- name: GetUserStats :one
 SELECT
     COUNT(*) AS GamesPlayed,
-    COALESCE(SUM(EXTRACT(EPOCH FROM (EndTime - StartTime))), 0)::float8 AS TotalSeconds
+    COALESCE(SUM(EXTRACT(EPOCH FROM (EndTime - StartTime))), 0)::float8 AS TotalSeconds,
+    COALESCE(SUM(Wins), 0)::bigint AS GamesWon
 FROM
     GameSessions
 WHERE
@@ -115,12 +116,13 @@ WHERE
 type GetUserStatsRow struct {
 	Gamesplayed  int64
 	Totalseconds float64
+	Gameswon     int64
 }
 
 func (q *Queries) GetUserStats(ctx context.Context, userid int32) (GetUserStatsRow, error) {
 	row := q.db.QueryRow(ctx, getUserStats, userid)
 	var i GetUserStatsRow
-	err := row.Scan(&i.Gamesplayed, &i.Totalseconds)
+	err := row.Scan(&i.Gamesplayed, &i.Totalseconds, &i.Gameswon)
 	return i, err
 }
 
@@ -149,6 +151,19 @@ func (q *Queries) GetUsernames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const incrementGameSessionWins = `-- name: IncrementGameSessionWins :exec
+UPDATE GameSessions
+SET
+    Wins = Wins + 1
+WHERE
+    GameSessionID = $1
+`
+
+func (q *Queries) IncrementGameSessionWins(ctx context.Context, gamesessionid int32) error {
+	_, err := q.db.Exec(ctx, incrementGameSessionWins, gamesessionid)
+	return err
 }
 
 const startGameSession = `-- name: StartGameSession :one

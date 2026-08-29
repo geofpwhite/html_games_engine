@@ -62,6 +62,7 @@ type Gamesession struct {
 	Gametype      Gametype
 	Starttime     pgtype.Timestamptz
 	Endtime       pgtype.Timestamptz
+	Wins          int32
 }
 
 type User struct {

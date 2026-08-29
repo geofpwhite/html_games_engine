@@ -77,7 +77,7 @@ func (gi *guessInput) Priority() int { return interfaces.PriorityNormal }
 func (gi *guessInput) ChangeState(gameObj interfaces.Game) {
 	gState, ok := gameObj.(*hangman)
 	if ok && gi.playerIndex == gState.turn {
-		gState.guess(rune(gi.guess[0]))
+		gState.guess(rune(gi.guess[0]), gi.playerIndex)
 	}
 }
 

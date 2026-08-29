@@ -114,5 +114,10 @@ func (s *postgresStore) GetUserStats(ctx context.Context, userID int32) (store.U
 	if err != nil {
 		return store.UserStats{}, err
 	}
-	return store.UserStats{GamesPlayed: row.Gamesplayed, TotalSeconds: row.Totalseconds}, nil
+	return store.UserStats{GamesPlayed: row.Gamesplayed, TotalSeconds: row.Totalseconds, GamesWon: row.Gameswon}, nil
+}
+
+// IncrementGameSessionWins records that the player behind sessionID won a round.
+func (s *postgresStore) IncrementGameSessionWins(ctx context.Context, sessionID int32) error {
+	return s.queries.IncrementGameSessionWins(ctx, sessionID)
 }

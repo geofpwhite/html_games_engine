@@ -9,10 +9,8 @@ import (
 
 	accounts "github.com/geofpwhite/html_games_engine/accounts"
 	"github.com/geofpwhite/html_games_engine/accounts/cache"
-	"github.com/geofpwhite/html_games_engine/accounts/cache/rediscache"
 	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	"github.com/geofpwhite/html_games_engine/accounts/store"
-	"github.com/geofpwhite/html_games_engine/accounts/store/pgstore"
 	connectthedots "github.com/geofpwhite/html_games_engine/connectTheDots"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/html_games_engine/metrics"
@@ -61,6 +59,9 @@ func Serve(
 	inputChannel *pq.PriorityChannel[interfaces.Input],
 	games map[string]interfaces.Game,
 	playerHashes map[string]*websocket.Conn,
+	userStore store.Store,
+	userCache cache.Cache,
+	sessions *gamesession.Tracker,
 ) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -82,10 +83,6 @@ func Serve(
 	r.HandleFunc("GET /favicon.png", func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, "geofpwhite.us.png")
 	})
-
-	userStore := pgstore.NewStore()
-	userCache := rediscache.NewCache()
-	sessions := gamesession.New(userStore, userCache)
 
 	hangman.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)
 	connect4.Routes(r, tmpl, &upgrader, games, playerHashes, inputChannel, sessions)

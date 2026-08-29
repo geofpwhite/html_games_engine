@@ -11,11 +11,12 @@ const (
 )
 
 type ticTacToe struct {
-	field       [3][3]int
-	turn        int
-	players     [2]*interfaces.Player
-	scores      [2]int
-	playersSize int
+	field          [3][3]int
+	turn           int
+	players        [2]*interfaces.Player
+	scores         [2]int
+	playersSize    int
+	pendingWinners []*interfaces.Player
 }
 
 type ticTacToeClientState struct {
@@ -45,11 +46,22 @@ func (gState *ticTacToe) move(x, y, team int) {
 	}
 	gState.field[x][y] = team
 	if gState.scan() {
+		if idx := team - 1; idx >= 0 && idx < len(gState.players) && gState.players[idx] != nil {
+			gState.pendingWinners = append(gState.pendingWinners, gState.players[idx])
+		}
 		gState.reset()
 		gState.scores[team]++
 	} else {
 		gState.turn = (gState.turn % 2) + 1
 	}
+}
+
+// ConsumeWinners returns the players who won a round since the last call, then
+// clears the pending list. Only ever called from the GameLoop goroutine.
+func (gState *ticTacToe) ConsumeWinners() []*interfaces.Player {
+	w := gState.pendingWinners
+	gState.pendingWinners = nil
+	return w
 }
 
 var possibleTicTacToes = [8][3][2]int{

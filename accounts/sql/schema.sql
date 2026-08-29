@@ -21,7 +21,8 @@ CREATE TABLE GameSessions (
     UserID INT NOT NULL REFERENCES Users (UserID),
     GameType GameType NOT NULL,
     StartTime TIMESTAMPTZ NOT NULL DEFAULT now(),
-    EndTime TIMESTAMPTZ
+    EndTime TIMESTAMPTZ,
+    Wins INT NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_game_sessions_userid ON GameSessions (UserID);

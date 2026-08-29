@@ -73,6 +73,9 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		}
 
 		sessionID, tracked := sessions.Start(req.Context(), req, "connectthedots")
+		if tracked {
+			game.players[len(game.players)-1].GameSessionID = sessionID
+		}
 		defer func(ctx context.Context) {
 			conn.Close()
 			if tracked {

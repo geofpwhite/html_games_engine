@@ -18,6 +18,7 @@ type connectTheDots struct {
 	turn             int
 	players          []*interfaces.Player
 	playersConnected int
+	pendingWinners   []*interfaces.Player
 }
 
 type connectTheDotsClientState struct {
@@ -102,10 +103,21 @@ func (ctd *connectTheDots) addEdge(coord [2]int, team int) {
 		}
 		ctd.field[coords[0]][coords[1]] = team
 		advanceTurn = false
+		if idx := team - 1; idx >= 0 && idx < len(ctd.players) {
+			ctd.pendingWinners = append(ctd.pendingWinners, ctd.players[idx])
+		}
 	}
 	if advanceTurn {
 		ctd.turn = (ctd.turn % 2) + 1
 	}
+}
+
+// ConsumeWinners returns the players who won a round (claimed a box) since the
+// last call, then clears the pending list. Only ever called from the GameLoop goroutine.
+func (ctd *connectTheDots) ConsumeWinners() []*interfaces.Player {
+	w := ctd.pendingWinners
+	ctd.pendingWinners = nil
+	return w
 }
 
 func (ctd *connectTheDots) JSON() interfaces.ClientState {

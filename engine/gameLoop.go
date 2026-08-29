@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/pq"
 )
@@ -14,6 +15,7 @@ func GameLoop(
 	inputChannel *pq.PriorityChannel[interfaces.Input],
 	outputChannel *pq.PriorityChannel[string],
 	games map[string]interfaces.Game,
+	sessions *gamesession.Tracker,
 	ctx context.Context,
 ) {
 	lastModified := map[interfaces.Game]time.Time{}
@@ -49,6 +51,17 @@ func GameLoop(
 			continue
 		}
 		userInput.ChangeState(game)
+		for _, winner := range game.ConsumeWinners() {
+			if winner.GameSessionID != 0 {
+				go func(sessionID int32) {
+					recordCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					defer cancel()
+					if err := sessions.RecordWin(recordCtx, sessionID); err != nil {
+						slog.Error("gameLoop: RecordWin failed", "error", err, "sessionID", sessionID)
+					}
+				}(winner.GameSessionID)
+			}
+		}
 		lastModified[game] = time.Now()
 		if err := outputChannel.Push(gameID, priority); err != nil {
 			slog.Error("gameLoop: output channel push failed", "error", err)

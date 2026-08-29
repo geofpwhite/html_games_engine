@@ -31,7 +31,6 @@ func main() {
 	}
 	queryStr = builder.String()
 	res, err := db.Exec(queryStr[:len(queryStr)-1])
-	fmt.Println(res, queryStr)
 	if err != nil {
 		panic("something is wrong with sqlite" + err.Error())
 	}

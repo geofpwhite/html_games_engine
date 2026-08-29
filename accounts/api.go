@@ -252,6 +252,7 @@ func (a *accountsAPI) onlineHandler(w http.ResponseWriter, _ *http.Request, user
 
 type statsResponse struct {
 	GamesPlayed     int64   `json:"gamesPlayed"`
+	GamesWon        int64   `json:"gamesWon"`
 	TotalTimePlayed float64 `json:"totalTimePlayedSeconds"`
 }
 
@@ -264,6 +265,7 @@ func (a *accountsAPI) statsHandler(w http.ResponseWriter, r *http.Request, userI
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(statsResponse{
 		GamesPlayed:     stats.GamesPlayed,
+		GamesWon:        stats.GamesWon,
 		TotalTimePlayed: stats.TotalSeconds,
 	}); err != nil {
 		slog.Error("error writing stats response", "error", err)

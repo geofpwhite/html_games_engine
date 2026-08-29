@@ -3,6 +3,7 @@ package hangman
 import (
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"slices"
@@ -92,7 +93,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		delete(playerHashes, playerHash)
 		egi := &exitGameInput{gameID, playerIndex}
 		if err := inputChannel.Push(egi, egi.Priority()); err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		}
 	})
 
@@ -104,19 +105,19 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		}
 		conn, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return
 		}
 
 		if games[gameID] != nil {
 			sessionID, tracked := sessions.Start(req.Context(), req, "hangman")
-			handleWebSocketHangman(conn, inputChannel, games[gameID], true, playerHash, playerHashes)
+			handleWebSocketHangman(conn, inputChannel, games[gameID], true, playerHash, playerHashes, sessionID)
 			if tracked {
 				sessions.End(req.Context(), sessionID)
 			}
 		} else {
 			if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "1"}); err != nil {
-				fmt.Println(err)
+				slog.Error(err.Error())
 			}
 			conn.Close()
 		}
@@ -128,10 +129,8 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 		if err != nil || gameID == "" {
 			panic("/hangman/ws/:gameID gave an error")
 		}
-		fmt.Println(games[gameID])
-		fmt.Println(gameID)
 		sessionID, tracked := sessions.Start(req.Context(), req, "hangman")
-		handleWebSocketHangman(conn, inputChannel, games[gameID], false, "", playerHashes)
+		handleWebSocketHangman(conn, inputChannel, games[gameID], false, "", playerHashes, sessionID)
 		if tracked {
 			sessions.End(req.Context(), sessionID)
 		}
@@ -145,6 +144,7 @@ func handleWebSocketHangman( //nolint:funlen // It's gonna get a little messy
 	reconnect bool,
 	hash string,
 	playerHashes map[string]*websocket.Conn,
+	sessionID int32,
 ) {
 	gState, ok := gameObj.(*hangman)
 	if !ok {
@@ -155,23 +155,28 @@ func handleWebSocketHangman( //nolint:funlen // It's gonna get a little messy
 		conn2 := playerHashes[hash]
 		if conn2 != nil {
 			if err := conn2.Close(); err != nil {
-				fmt.Println(err)
+				slog.Error(err.Error())
 			}
 			playerIndex = slices.IndexFunc(gState.players, func(p *interfaces.Player) bool { return p.PlayerID == hash })
 			if playerIndex == -1 {
 				if err := conn.WriteJSON(hangmanClientState{Hash: "undefined", Warning: "2"}); err != nil {
-					fmt.Println(err)
+					slog.Error(err.Error())
 				}
 				conn.Close()
 				return
 			}
+			gState.players[playerIndex].GameSessionID = sessionID
 			playerHashes[hash] = conn
 		}
 	} else {
 		playerIndex = len(gState.players)
 		playerHash := IDGenerator.GenerateID(32)
 		hash = playerHash
-		newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex+1), PlayerID: playerHash}
+		newPlayer := interfaces.Player{
+			Username:      "Player " + strconv.Itoa(playerIndex+1),
+			PlayerID:      playerHash,
+			GameSessionID: sessionID,
+		}
 		gState.newPlayer(newPlayer)
 
 		playerHashes[playerHash] = conn
@@ -194,7 +199,7 @@ func handleWebSocketHangman( //nolint:funlen // It's gonna get a little messy
 			ChatLogs:       gState.chatLogs,
 			Hash:           playerHash,
 		}); err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		}
 	}
 	defer conn.Close()
@@ -221,7 +226,7 @@ func handleWebSocketHangman( //nolint:funlen // It's gonna get a little messy
 	for i, player := range gState.players {
 		currentState.PlayerIndex = i
 		if err := playerHashes[player.PlayerID].WriteJSON(currentState); err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		}
 	}
 
@@ -230,7 +235,7 @@ func handleWebSocketHangman( //nolint:funlen // It's gonna get a little messy
 	// so there's no point continuing to read from this connection afterward.
 	push := func(inp interfaces.Input) bool {
 		if err := inputChannel.Push(inp, inp.Priority()); err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return false
 		}
 		return true

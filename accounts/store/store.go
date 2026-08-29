@@ -13,6 +13,7 @@ type User struct {
 type UserStats struct {
 	GamesPlayed  int64
 	TotalSeconds float64
+	GamesWon     int64
 }
 
 // Store defines the interface for all account data access operations.
@@ -38,4 +39,6 @@ type Store interface {
 	EndGameSession(ctx context.Context, sessionID int32) error
 	// GetUserStats summarizes the given user's play history across all games.
 	GetUserStats(ctx context.Context, userID int32) (UserStats, error)
+	// IncrementGameSessionWins records that the player behind sessionID won a round.
+	IncrementGameSessionWins(ctx context.Context, sessionID int32) error
 }

@@ -62,8 +62,16 @@ WHERE
 -- name: GetUserStats :one
 SELECT
     COUNT(*) AS GamesPlayed,
-    COALESCE(SUM(EXTRACT(EPOCH FROM (EndTime - StartTime))), 0)::float8 AS TotalSeconds
+    COALESCE(SUM(EXTRACT(EPOCH FROM (EndTime - StartTime))), 0)::float8 AS TotalSeconds,
+    COALESCE(SUM(Wins), 0)::bigint AS GamesWon
 FROM
     GameSessions
 WHERE
     UserID = $1;
+
+-- name: IncrementGameSessionWins :exec
+UPDATE GameSessions
+SET
+    Wins = Wins + 1
+WHERE
+    GameSessionID = $1;

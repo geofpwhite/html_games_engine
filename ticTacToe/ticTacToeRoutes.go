@@ -2,7 +2,6 @@ package tictactoe
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -46,7 +45,7 @@ func Routes(r *http.ServeMux, tmpl *template.Template, upgrader *websocket.Upgra
 			return
 		}
 		sessionID, tracked := sessions.Start(req.Context(), req, "tictactoe")
-		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, playerHashes, gameID)
+		handleWebSocketTicTacToe(conn, inputChannel, games[gameID], false, playerHashes, gameID, sessionID)
 		if tracked {
 			sessions.End(req.Context(), sessionID)
 		}
@@ -69,6 +68,7 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 	reconnect bool,
 	playerHashes map[string]*websocket.Conn,
 	gameID string,
+	sessionID int32,
 ) {
 	var hash string
 	gState, ok := gameObj.(*ticTacToe)
@@ -83,7 +83,11 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 		}
 		playerIndex = gState.playersSize
 		hash = IDGenerator.GenerateID(10)
-		newPlayer := interfaces.Player{Username: "Player " + strconv.Itoa(playerIndex), PlayerID: hash}
+		newPlayer := interfaces.Player{
+			Username:      "Player " + strconv.Itoa(playerIndex),
+			PlayerID:      hash,
+			GameSessionID: sessionID,
+		}
 		playerIndex = gState.newPlayer(newPlayer)
 		playerHashes[hash] = conn
 	}
@@ -96,7 +100,6 @@ func handleWebSocketTicTacToe(conn *websocket.Conn,
 			slog.Error("Error reading JSON from WebSocket connection:", "error", err)
 			return
 		}
-		fmt.Println(ui)
 		if err := inputChannel.Push(ui, ui.Priority()); err != nil {
 			slog.Error("Error pushing to inputChannel:", "error", err)
 			return

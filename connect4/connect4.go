@@ -30,6 +30,7 @@ func (c4i *connect4InsertInput) ChangeState(gameObj interfaces.Game) {
 	c4.Insert(c4i.team, c4i.column)
 	y := c4.scanForConnect4()
 	if len(y) > 0 {
+		c4.recordWinners(y)
 		c4.Clear()
 	}
 }
@@ -51,6 +52,7 @@ func (c4i *connect4RotateInput) ChangeState(gameObj interfaces.Game) {
 	c4.Rotate()
 	y := c4.scanForConnect4()
 	if len(y) > 0 {
+		c4.recordWinners(y)
 		c4.Clear()
 	}
 }
@@ -79,6 +81,7 @@ type connect4 struct {
 	playersConnected int
 	players          []*interfaces.Player
 	mut              *sync.RWMutex
+	pendingWinners   []*interfaces.Player
 }
 
 func newGameConnect4() (*connect4, string) {
@@ -106,6 +109,32 @@ func (c4 *connect4) JSON() interfaces.ClientState {
 	slices.Reverse(cp)
 	c4cs := connect4ClientState{Field: cp}
 	return c4cs
+}
+
+// recordWinners credits each distinct winning team's player with a round win.
+func (c4 *connect4) recordWinners(winners map[queueElement]bool) {
+	c4.mut.Lock()
+	defer c4.mut.Unlock()
+	seen := map[int]bool{}
+	for w := range winners {
+		if seen[w.team] {
+			continue
+		}
+		seen[w.team] = true
+		if idx := w.team - 1; idx >= 0 && idx < len(c4.players) {
+			c4.pendingWinners = append(c4.pendingWinners, c4.players[idx])
+		}
+	}
+}
+
+// ConsumeWinners returns the players who won a round since the last call, then
+// clears the pending list. Only ever called from the GameLoop goroutine.
+func (c4 *connect4) ConsumeWinners() []*interfaces.Player {
+	c4.mut.Lock()
+	defer c4.mut.Unlock()
+	w := c4.pendingWinners
+	c4.pendingWinners = nil
+	return w
 }
 
 func (c4 *connect4) Clear() {

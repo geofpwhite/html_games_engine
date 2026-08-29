@@ -5,6 +5,9 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/geofpwhite/html_games_engine/accounts/cache/rediscache"
+	"github.com/geofpwhite/html_games_engine/accounts/gamesession"
+	"github.com/geofpwhite/html_games_engine/accounts/store/pgstore"
 	engine "github.com/geofpwhite/html_games_engine/engine"
 	interfaces "github.com/geofpwhite/html_games_engine/interfaces"
 	"github.com/geofpwhite/pq"
@@ -20,7 +23,12 @@ func main() {
 	playerHashes := make(map[string]*websocket.Conn)
 	inputChannel := pq.NewPriorityChannel[interfaces.Input]()
 	outputChannel := pq.NewPriorityChannel[string]()
-	go engine.Serve(inputChannel, games, playerHashes)
+
+	userStore := pgstore.NewStore()
+	userCache := rediscache.NewCache()
+	sessions := gamesession.New(userStore, userCache)
+
+	go engine.Serve(inputChannel, games, playerHashes, userStore, userCache, sessions)
 	go engine.OutputLoop(outputChannel, games, playerHashes, ctx)
-	engine.GameLoop(inputChannel, outputChannel, games, ctx)
+	engine.GameLoop(inputChannel, outputChannel, games, sessions, ctx)
 }

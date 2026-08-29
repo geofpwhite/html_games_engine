@@ -47,3 +47,8 @@ func (t *Tracker) Start(ctx context.Context, r *http.Request, gameType string) (
 func (t *Tracker) End(ctx context.Context, sessionID int32) {
 	_ = t.store.EndGameSession(ctx, sessionID)
 }
+
+// RecordWin records that the player behind sessionID won a round.
+func (t *Tracker) RecordWin(ctx context.Context, sessionID int32) error {
+	return t.store.IncrementGameSessionWins(ctx, sessionID)
+}

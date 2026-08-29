@@ -179,6 +179,9 @@ func (wb *whiteboard) Players() []*interfaces.Player {
 	return wb.players
 }
 
+// ConsumeWinners always returns nil - a whiteboard is collaborative, not competitive.
+func (wb *whiteboard) ConsumeWinners() []*interfaces.Player { return nil }
+
 type whiteboardDelta struct {
 	Type   string `json:"type"`
 	X      int    `json:"x"`

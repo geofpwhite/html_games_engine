@@ -54,7 +54,7 @@ func GameLoop(
 		for _, winner := range game.ConsumeWinners() {
 			if winner.GameSessionID != 0 {
 				go func(sessionID int32, ctx context.Context) {
-					recordCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					recordCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 					defer cancel()
 					if err := sessions.RecordWin(recordCtx, sessionID); err != nil {
 						slog.Error("gameLoop: RecordWin failed", "error", err, "sessionID", sessionID)

@@ -41,11 +41,12 @@ func (di *drawInput) ChangeState(gameObj interfaces.Game) {
 		r := di.radius
 		for dx := -r; dx <= r; dx++ {
 			for dy := -r; dy <= r; dy++ {
-				if dx*dx+dy*dy <= r*r {
-					px, py := di.x+dx, di.y+dy
-					if px >= bounds.Min.X && px < bounds.Max.X && py >= bounds.Min.Y && py < bounds.Max.Y {
-						gState.img.Set(px, py, di.color)
-					}
+				if dx*dx+dy*dy > r*r {
+					continue
+				}
+				px, py := di.x+dx, di.y+dy
+				if px >= bounds.Min.X && px < bounds.Max.X && py >= bounds.Min.Y && py < bounds.Max.Y {
+					gState.img.Set(px, py, di.color)
 				}
 			}
 		}
@@ -103,36 +104,45 @@ func (ri *rectInput) GameID() string   { return ri.gameID }
 func (ri *rectInput) PlayerIndex() int { return -1 }
 func (ri *rectInput) Priority() int    { return interfaces.PriorityNormal }
 func (ri *rectInput) ChangeState(gameObj interfaces.Game) {
-	if gState, ok := gameObj.(*whiteboard); ok {
-		if ri.thetaDeg != 0 {
-			theta := ri.thetaDeg * math.Pi / 180
-			paint.DrawRotatedRectangle(
-				&gState.img,
-				paint.Coords{
-					X: ri.x1,
-					Y: ri.y1,
-				},
-				paint.Coords{
-					X: ri.x2,
-					Y: ri.y2,
-				},
-				theta,
-				ri.clr,
-				ri.thickness,
-				false)
-		} else {
-			paint.DrawRectangle(
-				&gState.img,
-				paint.Coords{
-					X: ri.x1, Y: ri.y1,
-				},
-				paint.Coords{
-					X: ri.x2, Y: ri.y2,
-				},
-				ri.clr, ri.thickness, false)
-		}
-		gState.needsFull = true
+	gState, ok := gameObj.(*whiteboard)
+	if !ok {
+		return
 	}
+	if ri.thetaDeg != 0 {
+		theta := ri.thetaDeg * math.Pi / 180
+		paint.DrawRotatedRectangle(
+			&gState.img,
+			paint.Coords{
+				X: ri.x1,
+				Y: ri.y1,
+			},
+			paint.Coords{
+				X: ri.x2,
+				Y: ri.y2,
+			},
+			theta,
+			ri.clr,
+			ri.thickness,
+			false,
+		)
+		gState.needsFull = true
+		return
+	}
+	paint.DrawRectangle(
+		&gState.img,
+		paint.Coords{
+			X: ri.x1,
+			Y: ri.y1,
+		},
+		paint.Coords{
+			X: ri.x2,
+			Y: ri.y2,
+		},
+		ri.clr,
+		ri.thickness,
+		false,
+	)
+	gState.needsFull = true
 }
 
 type circleInput struct {

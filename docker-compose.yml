@@ -54,7 +54,8 @@ services:
       - GF_SERVER_ROOT_URL=https://geof.geofpwhite.us/metrics/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
-      - grafana-data:/var/lib/grafana
+      - /tmp/grafana:/var/lib/grafana
+      # - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
